@@ -36,7 +36,7 @@ namespace moos.Models
                     TimeSpan duration = tfile.Properties.Duration;
                     ObservableCollection<string> artists = new ObservableCollection<string>(tfile.Tag.Performers);
                     string album = tfile.Tag.Album;
-                    uint year = tfile.Tag.Year;
+                    string year = tfile.Tag.Year.ToString();
                     LocalLibraryCollection.Add(new Track(title, filePath, duration, artists, album, year));
                 }
             }
@@ -56,7 +56,7 @@ namespace moos.Models
             tfile.Tag.Title = updatedTrack.Title;
             tfile.Tag.Performers = updatedTrack.Artists!.ToArray();
             tfile.Tag.Album = updatedTrack.Album;
-            tfile.Tag.Year = (uint)updatedTrack.Year;
+            tfile.Tag.Year = uint.Parse(updatedTrack.Year);
             tfile.Save();
             await Task.Delay(500);
 

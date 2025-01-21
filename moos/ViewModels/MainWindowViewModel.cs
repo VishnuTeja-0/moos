@@ -8,6 +8,7 @@ using System.Windows.Input;
 using System.Reactive.Concurrency;
 using Avalonia.Controls;
 using Avalonia.Controls.Models.TreeDataGrid;
+//using Avalonia.Controls.Models.DataGrid;
 using System.Linq.Expressions;
 using System.Diagnostics;
 using Avalonia.Interactivity;
@@ -19,13 +20,14 @@ using System.Collections.ObjectModel;
 using System.Configuration;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
+using System.ComponentModel;
 
 
 namespace moos.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private string libraryFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic) + "\\" + ConfigurationManager.AppSettings["libraryFolder"];
+    private readonly string libraryFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic) + "\\" + ConfigurationManager.AppSettings["libraryFolder"];
     public ICommand DownloadYoutubeMp3DirectCommand { get; }
 
     private int GetYoutubeVideo()
@@ -61,8 +63,6 @@ public partial class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _libraryDataGridSource, value);
     }
 
-    public FlatTreeDataGridSource<Track> LibrarySource { get; }
-
     private string? _YtUrl;
     public string? YtUrl
     {
@@ -91,13 +91,7 @@ public partial class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _IsLibraryButtonEnabled, value); 
     }
 
-    public ICommand SetTrackSelectionCommand { get; }
-    public void SetTrackSelection()
-    {
-        IsLibraryButtonEnabled = true;
-        SelectedTrack = LibrarySource.RowSelection?.SelectedItem;
-    }
-
+    public ICommand EnableMetadataOptionsCommand { get; }
     public ICommand OpenMetadataDialogCommand { get; }
     public ICommand ResetMetadataDialogCommand { get; }
 
@@ -116,79 +110,110 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     public ICommand SubmitMetadataChangesCommand { get; }
+
+    private async void SubmitMetadataChanges()
+    {
+        // Add syncing
+        if (!IsDialogYearWarningVisible)
+        {
+            try
+            {
+                await Task.Run(() => { LocalLibrary.EditTrackMetadata(DialogTrack!, libraryFolder); });
+                await Task.Run(() => { LoadLibrary(); });
+                SelectedTrack = DialogTrack;
+                IsMetadataDialogOpen = false;
+            }
+            catch (Exception ex)
+            {
+                //Logging
+                Console.WriteLine(ex.Message);
+            }
+        }
+    }
+
     public ICommand EnterNewDialogArtistCommand { get; }
     public ICommand RemoveDialogArtistCommand { get; }
+
+    private bool _IsMetadataOptionEnabled = false;
+    public bool IsMetadataOptionEnabled
+    {
+        get => _IsMetadataOptionEnabled;
+        set => this.RaiseAndSetIfChanged(ref _IsMetadataOptionEnabled, value);
+    }
+
+    private bool _IsDialogYearWarningVisible = false;
+    public bool IsDialogYearWarningVisible
+    {
+        get => _IsDialogYearWarningVisible;
+        set => this.RaiseAndSetIfChanged(ref _IsDialogYearWarningVisible, value);
+    }
+
+    public ICommand SetMetadataFormActionsCommand { get; }
 
     public MainWindowViewModel()
     {
         RxApp.MainThreadScheduler.Schedule(LoadLibrary);
-
-        LibrarySource = new FlatTreeDataGridSource<Track>(LibraryDataGridSource)
-        {
-            Columns =
-                {
-                    new TextColumn<Track, string>("Title", Track => Track.Title),
-                    new TextColumn<Track, string>("Artist", song => song.DisplayArtists),
-                    new TextColumn<Track, string>("Album", song => song.Album),
-                    new TextColumn<Track, uint>("Year", song => song.Year),
-                    new TextColumn<Track, string>("Duration", song => song.DisplayDuration)
-
-                }
-        };
 
         DownloadYoutubeMp3DirectCommand = ReactiveCommand.Create(() => 
         {
             GetYoutubeVideo();
         } );
 
-        SetTrackSelectionCommand = ReactiveCommand.Create(() =>
+        EnableMetadataOptionsCommand = ReactiveCommand.Create(() =>
         {
-            SetTrackSelection();
+            IsLibraryButtonEnabled = true;
         });
 
         OpenMetadataDialogCommand = ReactiveCommand.Create(() =>
         {
             DialogTrack = (Track) SelectedTrack!.Clone();
+            IsMetadataOptionEnabled = false;
             IsMetadataDialogOpen = true;
         });
 
         ResetMetadataDialogCommand = ReactiveCommand.Create(() =>
         {
-            DialogTrack = (Track)SelectedTrack!.Clone();
+            DialogTrack = (Track) SelectedTrack!.Clone();
+            IsMetadataOptionEnabled = false;
         });
 
         SubmitMetadataChangesCommand = ReactiveCommand.Create(() =>
         {
-            // Add syncing
-            try
-            {
-                LocalLibrary.EditTrackMetadata(DialogTrack!, libraryFolder);
-                LoadLibrary();
-                SelectedTrack = DialogTrack;
-                IsMetadataDialogOpen = false;
-            }
-            catch(Exception ex)
-            {
-                //Logging
-                Console.WriteLine(ex.Message);
-            }
+            SubmitMetadataChanges();
         });
 
         EnterNewDialogArtistCommand = ReactiveCommand.Create(() =>
         {
             if(DialogTrack!.Artists == null)
             {
-                DialogTrack.Artists = new ObservableCollection<string> { NewArtist! };
+                DialogTrack.Artists = [NewArtist!];
+                NewArtist = null;
             }
             else
             {
                 DialogTrack.Artists.Add(NewArtist!);
+                NewArtist = null;
             }
         });
 
         RemoveDialogArtistCommand = ReactiveCommand.Create((string selectedArtist) =>
         {
             DialogTrack!.Artists!.Remove(selectedArtist);
+            IsMetadataOptionEnabled = !(SelectedTrack!.Equals(DialogTrack!));
+        });
+
+        SetMetadataFormActionsCommand = ReactiveCommand.Create(() =>
+        {
+            IsMetadataOptionEnabled = !(SelectedTrack!.Equals(DialogTrack!));
+
+            if(DialogTrack!.Year != "" && !uint.TryParse(DialogTrack!.Year, out uint _))
+            {
+                IsDialogYearWarningVisible = true;
+            }
+            else
+            {
+                IsDialogYearWarningVisible = false;
+            }
         });
 
     }

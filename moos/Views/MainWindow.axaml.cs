@@ -22,11 +22,11 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
     public void SetTrackSelection(object source, TappedEventArgs args)
     {
-        var localLibraryGrid = (TreeDataGrid)source;
-        if (localLibraryGrid != null && localLibraryGrid.RowSelection!.Count > 0) 
+        var localLibraryGrid = (DataGrid)source;
+        if (localLibraryGrid != null && localLibraryGrid.SelectedItems.Count > 0)
         {
-            var vm = (MainWindowViewModel) DataContext!;
-            vm.SetTrackSelectionCommand.Execute(null);
+            var vm = (MainWindowViewModel)DataContext!;
+            vm.EnableMetadataOptionsCommand.Execute(null);
         }
     }
 
@@ -51,5 +51,11 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
             vm.RemoveDialogArtistCommand.Execute(selectedArtist);
         }
         
+    }
+
+    public void CheckForDialogChanges(object source, KeyEventArgs args)
+    {
+        var vm = (MainWindowViewModel)DataContext!;
+        vm.SetMetadataFormActionsCommand.Execute(null);
     }
 }

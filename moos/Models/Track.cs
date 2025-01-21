@@ -2,8 +2,10 @@
 using Avalonia.Media.Imaging;
 using DynamicData;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -12,8 +14,8 @@ using System.Threading.Tasks;
 namespace moos.Models
 {
     public class Track(string title, string filePath, TimeSpan duration,
-        ObservableCollection<string> artists, string album = "", uint year = 0, string? lyrics = "",
-        Bitmap? albumArt = null) : ICloneable
+        ObservableCollection<string> artists, string album = "", string year = "", string? lyrics = "",
+        Bitmap? albumArt = null) : ICloneable, IEquatable<Track>
     {
         public string Title { get; set; } = title;
         public ObservableCollection<string>? Artists { get; set; } = artists ?? ([]);
@@ -36,11 +38,24 @@ namespace moos.Models
         }
         public string? Lyrics { get; set; } = lyrics;
         public Bitmap? AlbumArt { get; set; } = albumArt;
-        public uint Year { get; set; } = year == 0 ? (uint) DateTime.Now.Year : year;
+        public string Year { get; set; } = year == "" ? DateTime.Now.Year.ToString() : year;
 
         public object Clone()
         {
-            return new Track(Title, FilePath, Duration, Artists, Album, Year, Lyrics,
+            ObservableCollection<string> clonedArtists = [];
+            if (artists != null && artists.Count > 0)
+            {
+                foreach (var item in (IEnumerable)Artists)
+                {
+                    ICloneable? cloneable = item as ICloneable;
+                    if (cloneable != null)
+                    {
+                        clonedArtists.Add((string)cloneable.Clone());
+                    }
+                }
+            }
+
+            return new Track(Title, FilePath, Duration, clonedArtists, Album, Year, Lyrics,
                 AlbumArt == null ? null : CopyBitmap(AlbumArt));
         }
 
@@ -53,6 +68,23 @@ namespace moos.Models
 
                 return new Bitmap(memoryStream);
             }
+        }
+
+        public bool Equals(Track? other)
+        {
+            if (
+                other == null ||
+                this.Title.Trim() != other.Title.Trim() || 
+                this.Year != other.Year ||
+                this.Album != other.Album ||
+                this.Artists!.Except(other.Artists!).Any() ||
+                other.Artists!.Except(this.Artists!).Any()
+                )
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }
