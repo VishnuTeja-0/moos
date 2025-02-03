@@ -1,5 +1,6 @@
 ﻿using Avalonia.Controls.Chrome;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using DynamicData;
 using System;
 using System.Collections;
@@ -38,6 +39,23 @@ namespace moos.Models
         }
         public string? Lyrics { get; set; } = lyrics;
         public Bitmap? AlbumArt { get; set; } = albumArt;
+        public MemoryStream? DisplayAlbumArt
+        {
+            get
+            {
+                if(AlbumArt != null)
+                {
+                    var memoryStream = new MemoryStream();
+                    AlbumArt.Save(memoryStream);
+                    memoryStream.Position = 0;
+                    return memoryStream;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
         public string Year { get; set; } = year == "" ? DateTime.Now.Year.ToString() : year;
 
         public object Clone()
@@ -57,6 +75,11 @@ namespace moos.Models
 
             return new Track(Title, FilePath, Duration, clonedArtists, Album, Year, Lyrics,
                 AlbumArt == null ? null : CopyBitmap(AlbumArt));
+        }
+
+        public void SetAlbumArt(string filePath)
+        {
+            this.AlbumArt = new Bitmap(AssetLoader.Open(new Uri(filePath)));
         }
 
         private static Bitmap CopyBitmap(Bitmap original)

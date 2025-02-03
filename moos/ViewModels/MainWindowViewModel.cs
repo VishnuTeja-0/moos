@@ -21,6 +21,7 @@ using System.Configuration;
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using System.ComponentModel;
+using System.IO;
 
 
 namespace moos.ViewModels;
@@ -28,6 +29,8 @@ namespace moos.ViewModels;
 public partial class MainWindowViewModel : ViewModelBase
 {
     private readonly string libraryFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic) + "\\" + ConfigurationManager.AppSettings["libraryFolder"];
+    private readonly string defaultAlbumArtPath = ConfigurationManager.AppSettings["defaultAlbumArtPath"];
+
     public ICommand DownloadYoutubeMp3DirectCommand { get; }
 
     private int GetYoutubeVideo()
@@ -77,6 +80,7 @@ public partial class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _SelectedTrack, value);
     }
 
+    #region Metadata Commands 
     private Track? _DialogTrack;
     public Track? DialogTrack
     {
@@ -125,7 +129,7 @@ public partial class MainWindowViewModel : ViewModelBase
             }
             catch (Exception ex)
             {
-                //Logging
+                //Logging and Error Display
                 Console.WriteLine(ex.Message);
             }
         }
@@ -149,6 +153,67 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     public ICommand SetMetadataFormActionsCommand { get; }
+    #endregion
+
+    #region Player Commands
+    private Track? _PlayingTrack;
+    public Track? PlayingTrack
+    {
+        get => _PlayingTrack;
+        set => this.RaiseAndSetIfChanged(ref _PlayingTrack, value);
+    }
+
+    private bool _IsPlaying = false;
+    public bool IsPlaying
+    {
+        get => _IsPlaying;
+        set => this.RaiseAndSetIfChanged(ref _IsPlaying, value);
+    }
+
+    private Playlist? _Playlist;
+    public Playlist? Playlist
+    {
+        get => _Playlist;
+        set => this.RaiseAndSetIfChanged(ref _Playlist, value);
+    }
+
+    public ICommand PlaySingleTrackCommand {  get; }
+
+    private void SetAndPlayTrack(Track track)
+    {
+        PlayingTrack = (Track)track!.Clone();
+        if (PlayingTrack.AlbumArt == null)
+        {
+            PlayingTrack.SetAlbumArt(defaultAlbumArtPath);
+        }
+
+        if(Playlist != null)
+        {
+            Playlist.StopTrack();
+        }
+
+        Playlist = new Playlist();
+        Playlist.AddTrack(track);
+        Playlist.PlayThrough(0);
+        IsPlaying = true;
+    }
+
+    public ICommand PlayPauseActiveTrackCommand { get; }
+    
+    private void PlayPauseActiveTrack(bool IsMuted)
+    {
+        if (!IsMuted)
+        {
+            Playlist!.PauseTrack();
+            IsPlaying = false;
+        }
+        else
+        {
+            Playlist!.ResumeTrack();
+            IsPlaying = true;
+        }
+    }
+    #endregion
 
     public MainWindowViewModel()
     {
@@ -157,7 +222,7 @@ public partial class MainWindowViewModel : ViewModelBase
         DownloadYoutubeMp3DirectCommand = ReactiveCommand.Create(() => 
         {
             GetYoutubeVideo();
-        } );
+        });
 
         EnableMetadataOptionsCommand = ReactiveCommand.Create(() =>
         {
@@ -216,5 +281,14 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         });
 
+        PlaySingleTrackCommand = ReactiveCommand.Create(() =>
+        {
+            SetAndPlayTrack(SelectedTrack!);
+        });
+
+        PlayPauseActiveTrackCommand = ReactiveCommand.Create((bool isPlayButtonChecked) =>
+        {
+            PlayPauseActiveTrack(isPlayButtonChecked);
+        });
     }
 }

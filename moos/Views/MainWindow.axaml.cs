@@ -8,6 +8,7 @@ using moos.ViewModels;
 using ReactiveUI;
 using System;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace moos.Views;
@@ -27,6 +28,19 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         {
             var vm = (MainWindowViewModel)DataContext!;
             vm.EnableMetadataOptionsCommand.Execute(null);
+        }
+    }
+
+    public void PlaySingleTrack(object source, TappedEventArgs args)
+    {
+        var localLibraryGrid = (DataGrid)source;
+        var eventSource = args.Source as Interactive;
+        var eventSourceName = eventSource!.Name;
+        if (localLibraryGrid != null && localLibraryGrid.SelectedItems.Count > 0 && 
+            (eventSourceName == "CellBorder" || eventSourceName == "CellTextBlock"))
+        {
+            var vm = (MainWindowViewModel)DataContext!;
+            vm.PlaySingleTrackCommand.Execute(null);
         }
     }
 

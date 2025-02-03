@@ -59,22 +59,6 @@ namespace moos.Models
             tfile.Tag.Year = uint.Parse(updatedTrack.Year);
             tfile.Save();
             await Task.Delay(500);
-
-            //_ = Task.Run(async () =>
-            //{
-            //    while (true)
-            //    {
-            //        await Task.Delay(TimeSpan.FromSeconds(1));
-
-            //        Dispatcher.UIThread.Post(() =>
-            //        {
-            //            LoadLocalCollection(folderPath);
-            //            this.RaisePropertyChanged(nameof(LocalLibraryCollection));
-            //        });
-            //    }
-            //});
-
-            //LoadLocalCollection(folderPath);
         }
 
         public void DownloadSong(string url)
