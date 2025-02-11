@@ -1,10 +1,7 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using moos.Services;
 using NAudio.Wave;
 
@@ -12,67 +9,53 @@ namespace moos.Models
 {
     public class Playlist
     {
-        private ObservableCollection<Track>? currentPlaylist;
-        private Player playerInstance = new Player();
-        private int playerPosition = 0;
+        public ObservableCollection<Track>? CurrentPlaylist;
+        private int PlayerPosition = 0;
 
         public void AddTrack(Track track)
         {
-            if(currentPlaylist == null)
+            if(CurrentPlaylist is null)
             {
-                currentPlaylist = new ObservableCollection<Track>();
+                CurrentPlaylist = new ObservableCollection<Track>();
             }
 
-            currentPlaylist.Add(track);
+            CurrentPlaylist.Add(track);
         }
 
         public void RemoveTrack(string filePath)
         {
-            if(currentPlaylist != null)
+            if(CurrentPlaylist is not null)
             {
-                currentPlaylist.Remove(currentPlaylist.First(track => track.FilePath == filePath));
-                if (currentPlaylist.Count == 1)
+                CurrentPlaylist.Remove(CurrentPlaylist.First(track => track.FilePath == filePath));
+                if (CurrentPlaylist.Count == 0)
                 {
-                    currentPlaylist = null;
+                    CurrentPlaylist = null;
                 }
             }
         }
 
-        public void PlayThrough(int? newPlayerPosition = null)
+        public Track? ReturnTrack(int? newPlayerPosition = null)
         {
-            if(newPlayerPosition != null)
+            if(newPlayerPosition is null && PlayerPosition < CurrentPlaylist!.Count - 1)
             {
-                playerPosition = (int)newPlayerPosition;
+                PlayerPosition++;
             }
-
-            if (currentPlaylist != null && playerPosition < currentPlaylist.Count())
+            else if(newPlayerPosition == -1 && PlayerPosition > 0)
             {
-                List<string> trackPaths = currentPlaylist.Select(track => track.FilePath).ToList();
-                playerInstance.PlayTrack(trackPaths[playerPosition]);
-
-                playerInstance.TrackFinished += OnTrackFinished;
+                PlayerPosition--;
             }
+            else if(newPlayerPosition is not null && newPlayerPosition.Value != -1)
+            {
+                PlayerPosition = newPlayerPosition.Value;
+            }
+            else
+            {
+                return null;
+            }
+            
+            return CurrentPlaylist!.ElementAt(PlayerPosition);        
         }
 
-        private void OnTrackFinished(object? sender, StoppedEventArgs args)
-        {
-            playerPosition++;
-            PlayThrough();
-        }
 
-        public void ResumeTrack()
-        {
-            playerInstance.ResumeTrack();
-        }
-
-        public void PauseTrack()
-        {
-            playerInstance.PauseTrack();
-        }
-
-        public void StopTrack()
-        {
-            playerInstance.StopTrack();
-        }
     }
 }

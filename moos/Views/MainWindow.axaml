@@ -236,12 +236,12 @@
                       <TextBlock Text="{Binding PlayingTrack.Album}" />
                     </StackPanel>
                   </StackPanel>
-                  <Button>
+                  <Button Command="{Binding PlayPreviousCommand}">
                     <PathIcon Data="{StaticResource previous_regular}" />
                   </Button>
                   <ToggleButton Command="{Binding PlayPauseActiveTrackCommand}"
                                 CommandParameter="{Binding IsChecked, RelativeSource={RelativeSource Self}}"
-                                IsChecked="{Binding IsPlaying, Mode=OneWay}">
+                                IsChecked="{Binding IsPlaying, Mode=TwoWay}">
                     <ToggleButton.Styles>
                       <Style Selector="ToggleButton">
                         <Style Selector="^ PathIcon.play">
@@ -289,34 +289,44 @@
                       <PathIcon Classes="pause" Data="{StaticResource pause_regular}" />
                     </Panel>
                   </ToggleButton>
-                  <Button>
+                  <Button Command="{Binding PlayNextCommand}">
                     <PathIcon Data="{StaticResource next_regular}" />
                   </Button>
-                  <Slider Margin="10" Width="100"
-                          Minimum="0" Maximum="{Binding SelectedTrack.Duration, Mode=OneWay}">
-                    <Slider.Styles>
-                      <Style Selector="Slider:horizontal">
-                        <Setter Property="MinWidth" Value="300" />
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding DisplayPlayingPosition}" />
+                    <Slider Name="SliderPlayingTrack" Margin="10" Width="100"
+                            Minimum="0" Maximum="{Binding PlayingTrack.Duration.TotalSeconds, Mode=OneWay}"
+                            Value="{Binding PlayingTrackPosition, Mode=TwoWay}"
+                            TickFrequency="1"
+                            IsSnapToTickEnabled="True">
+                      <Slider.Styles>
+                        <Style Selector="Slider:horizontal">
+                          <Setter Property="MinWidth" Value="300" />
 
-                        <Style Selector="^ Track">
-                          <Style Selector="^ RepeatButton Border">
-                            <Setter Property="CornerRadius" Value="10"/>
-                            <Setter Property="Height" Value="16"/>
-                            <Setter Property="Background" Value="rgba(53, 117, 117, 0.4)" />
-                          </Style>
-                          <Style Selector="^ Thumb">
-                            <Setter Property="Height" Value="12"/>
-                            <Setter Property="Width" Value="12"/>
-                            <Setter Property="BorderBrush" Value="Gray"/>
-                            <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="Background" Value="Turquoise"/>
+                          <Style Selector="^ Track">
+                            <Style Selector="^ RepeatButton Border">
+                              <Setter Property="CornerRadius" Value="10"/>
+                              <Setter Property="Height" Value="16"/>
+                              <Setter Property="Background" Value="rgba(53, 117, 117, 0.4)" />
+                            </Style>
+                            <Style Selector="^ Thumb">
+                              <Setter Property="Height" Value="12"/>
+                              <Setter Property="Width" Value="12"/>
+                              <Setter Property="BorderBrush" Value="Gray"/>
+                              <Setter Property="BorderThickness" Value="0"/>
+                              <Setter Property="Background" Value="Turquoise"/>
+                            </Style>
                           </Style>
                         </Style>
-                      </Style>
-                    </Slider.Styles>
-                  </Slider>
+                      </Slider.Styles>
+                    </Slider>
+                    <TextBlock Text="{Binding PlayingTrack.DisplayDuration}" />
+                  </StackPanel>
+                  
                   <StackPanel Orientation="Horizontal">
-                    <ToggleButton>
+                    <ToggleButton Command="{Binding MuteButtonCommand}"
+                                  CommandParameter="{Binding IsChecked, RelativeSource={RelativeSource Self}}"
+                                  IsChecked="{Binding !PlayerVolume}">
                       <ToggleButton.Styles>
                         <Style Selector="ToggleButton">
                           <Style Selector="^ PathIcon.audio-on">
@@ -325,16 +335,11 @@
                           <Style Selector="^ PathIcon.audio-off">
                             <Setter Property="IsVisible" Value="False"/>
                           </Style>
-                          <!--<Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
-                            <Setter Property="Background" Value="DarkCyan" />
-                            <Setter Property="BorderBrush" Value="Yellow" />
-                          </Style>-->
                           <Setter Property="Template">
                             <ControlTemplate>
                               <Panel>
                                 <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" Margin="{TemplateBinding Padding}"
-                                                  Background="DarkGray" Padding="5"
-                                                  BorderBrush="Aqua" BorderThickness="2" />
+                                                  Background="Transparent" Padding="5"/>
                               </Panel>
                             </ControlTemplate>
                           </Setter>
@@ -345,18 +350,11 @@
                           </Style>
                           <Style Selector="^ PathIcon.audio-off">
                             <Setter Property="IsVisible" Value="True"/>
+                            <Setter Property="Foreground" Value="DarkCyan" />
                           </Style>
                           <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
-                            <Setter Property="Background" Value="DarkCyan" />
+                            <Setter Property="Background" Value="Transparent" />
                           </Style>
-                          <!--<Setter Property="Template">
-                            <ControlTemplate>
-                              <Panel>
-                                <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" Margin="{TemplateBinding Padding}"
-                                                  Padding="10" />
-                              </Panel>
-                            </ControlTemplate>
-                          </Setter>-->
                         </Style>
                       </ToggleButton.Styles>
                       <Panel>
@@ -364,7 +362,13 @@
                         <PathIcon Classes="audio-off" Data="{StaticResource speaker_off_regular}" Width="15" Height="15" />
                       </Panel>
                     </ToggleButton>
-                    <Slider Margin="5" Width="100">
+                    <Slider Name="SliderVolume" Margin="5" Width="100"
+                            Minimum="0" Maximum="100" 
+                            Value="{Binding PlayerVolume, Mode=TwoWay}"
+                            SmallChange="1"
+                            LargeChange="10"
+                            TickFrequency="1"
+                            IsSnapToTickEnabled="True">
 
                     </Slider>
                   </StackPanel>

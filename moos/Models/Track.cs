@@ -1,16 +1,11 @@
-﻿using Avalonia.Controls.Chrome;
-using Avalonia.Media.Imaging;
+﻿using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using DynamicData;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace moos.Models
 {
@@ -24,7 +19,7 @@ namespace moos.Models
         {
             get
             {
-                return Artists != null ? string.Join(", ", Artists) : "";
+                return Artists is not null ? string.Join(", ", Artists) : "";
             }
         }
         public string? Album { get; set; } = album;
@@ -43,7 +38,7 @@ namespace moos.Models
         {
             get
             {
-                if(AlbumArt != null)
+                if(AlbumArt is not null)
                 {
                     var memoryStream = new MemoryStream();
                     AlbumArt.Save(memoryStream);
@@ -61,12 +56,12 @@ namespace moos.Models
         public object Clone()
         {
             ObservableCollection<string> clonedArtists = [];
-            if (artists != null && artists.Count > 0)
+            if (artists is not null && artists.Count > 0)
             {
                 foreach (var item in (IEnumerable)Artists)
                 {
                     ICloneable? cloneable = item as ICloneable;
-                    if (cloneable != null)
+                    if (cloneable is not null)
                     {
                         clonedArtists.Add((string)cloneable.Clone());
                     }
@@ -74,7 +69,7 @@ namespace moos.Models
             }
 
             return new Track(Title, FilePath, Duration, clonedArtists, Album, Year, Lyrics,
-                AlbumArt == null ? null : CopyBitmap(AlbumArt));
+                AlbumArt is null ? null : CopyBitmap(AlbumArt));
         }
 
         public void SetAlbumArt(string filePath)
@@ -96,7 +91,7 @@ namespace moos.Models
         public bool Equals(Track? other)
         {
             if (
-                other == null ||
+                other is null ||
                 this.Title.Trim() != other.Title.Trim() || 
                 this.Year != other.Year ||
                 this.Album != other.Album ||

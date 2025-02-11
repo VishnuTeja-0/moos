@@ -1,27 +1,17 @@
-﻿
-using Avalonia.Threading;
-using moos.Models;
+﻿using moos.Models;
 using ReactiveUI;
 using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Reactive.Concurrency;
-using Avalonia.Controls;
-using Avalonia.Controls.Models.TreeDataGrid;
-//using Avalonia.Controls.Models.DataGrid;
-using System.Linq.Expressions;
-using System.Diagnostics;
-using Avalonia.Interactivity;
-using System.Reactive;
 using System.Reactive.Linq;
-using System.Linq;
-using DynamicData;
 using System.Collections.ObjectModel;
 using System.Configuration;
-using Avalonia.Controls.Templates;
-using Avalonia.Data;
+using moos.Services;
+using NAudio.Wave;
+using Avalonia.Threading;
 using System.ComponentModel;
-using System.IO;
+using Avalonia.Controls;
 
 
 namespace moos.ViewModels;
@@ -156,6 +146,8 @@ public partial class MainWindowViewModel : ViewModelBase
     #endregion
 
     #region Player Commands
+    private PlayerService _Player;
+
     private Track? _PlayingTrack;
     public Track? PlayingTrack
     {
@@ -179,23 +171,101 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ICommand PlaySingleTrackCommand {  get; }
 
+    private IDisposable? _playbackTimerSubscription;
+
     private void SetAndPlayTrack(Track track)
     {
+        ResetPlayback();
+        InitializeTrack(track);
+
+        if(Playlist is null || Playlist.CurrentPlaylist is null || Playlist.CurrentPlaylist.Count == 1)
+        {
+            Playlist = new Playlist();
+            Playlist.AddTrack(track);
+        }
+
+        _Player = new PlayerService();
+        _Player.PlayTrack(track.FilePath);
+        _Player!.SetVolume(PlayerVolume);
+        IsPlaying = true;
+
+        StartPlaybackTimer();
+    }
+
+    private void ResetPlayback()
+    {
+        if (PlayingTrack is not null)
+        {
+            _playbackTimerSubscription?.Dispose();
+            _playbackTimerSubscription = null;
+            _Player.StopTrack();
+            PlayingTrackPosition = 0;
+        }
+    }
+
+    private void InitializeTrack(Track track)
+    {
         PlayingTrack = (Track)track!.Clone();
-        if (PlayingTrack.AlbumArt == null)
+        if (PlayingTrack.AlbumArt is null)
         {
             PlayingTrack.SetAlbumArt(defaultAlbumArtPath);
         }
+    }
 
-        if(Playlist != null)
-        {
-            Playlist.StopTrack();
+    private void StartPlaybackTimer()
+    {
+        _playbackTimerSubscription = Observable
+            .Interval(TimeSpan.FromMilliseconds(300))
+            .SubscribeOn(TaskPoolScheduler.Default)
+            .ObserveOn(RxApp.MainThreadScheduler)
+
+            .Subscribe(_ =>
+            {
+                PlayingTrackPosition = _Player.GetPosition();
+                if (PlayingTrackPosition > PlayingTrack?.Duration.TotalSeconds)
+                {
+                    IsPlaying = false;
+                    PlayNextTrack();
+                }
+            });
+    }
+
+    public ICommand PlayNextCommand { get; }
+
+    private void PlayNextTrack()
+    {
+        if (Playlist is null)
+        {            
+            return;
         }
 
-        Playlist = new Playlist();
-        Playlist.AddTrack(track);
-        Playlist.PlayThrough(0);
-        IsPlaying = true;
+        Track? track = Playlist.ReturnTrack();
+        if (track is null)
+        {
+            return;
+        }
+
+        SetAndPlayTrack(track);
+    }
+
+    public ICommand PlayPreviousCommand { get; }
+
+    private void PlayPreviousTrack()
+    {
+        if (Playlist is null || PlayingTrackPosition > 5)
+        {
+            PlayingTrackPosition = 0;
+            return;
+        }
+
+        Track? track = Playlist.ReturnTrack(-1);
+        if (track is null)
+        {
+            PlayingTrackPosition = 0;
+            return;
+        }
+
+        SetAndPlayTrack(track);
     }
 
     public ICommand PlayPauseActiveTrackCommand { get; }
@@ -204,13 +274,51 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (!IsMuted)
         {
-            Playlist!.PauseTrack();
+            _Player!.PauseTrack();
             IsPlaying = false;
         }
         else
         {
-            Playlist!.ResumeTrack();
+            if (Math.Floor(PlayingTrackPosition) == Math.Floor(PlayingTrack!.Duration.TotalSeconds))
+            {
+                PlayingTrackPosition = 0;
+                _Player.PlayTrack(PlayingTrack.FilePath);
+            }
+            else
+            {
+                _Player!.ResumeTrack();
+            }
+
             IsPlaying = true;
+        }
+    }
+
+    private float _PlayerVolume = 25;
+    public float PlayerVolume
+    {
+        get => _PlayerVolume;
+        set => this.RaiseAndSetIfChanged(ref _PlayerVolume, value);
+    }
+    private float tempVolume = 40;
+
+    public ICommand MuteButtonCommand { get; }
+
+    private double _PlayingTrackPosition = 0;
+    public double PlayingTrackPosition
+    {
+        get => _PlayingTrackPosition;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _PlayingTrackPosition, value);
+            this.RaisePropertyChanged(nameof(DisplayPlayingPosition));
+        }
+    }
+
+    public string DisplayPlayingPosition
+    {
+        get
+        {
+            return TimeSpan.FromSeconds(PlayingTrackPosition).ToString("mm\\:ss");
         }
     }
     #endregion
@@ -249,7 +357,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         EnterNewDialogArtistCommand = ReactiveCommand.Create(() =>
         {
-            if(DialogTrack!.Artists == null)
+            if(DialogTrack!.Artists is null)
             {
                 DialogTrack.Artists = [NewArtist!];
                 NewArtist = null;
@@ -271,7 +379,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             IsMetadataOptionEnabled = !(SelectedTrack!.Equals(DialogTrack!));
 
-            if(DialogTrack!.Year != "" && !uint.TryParse(DialogTrack!.Year, out uint _))
+            if (DialogTrack!.Year != "" && !uint.TryParse(DialogTrack!.Year, out uint _))
             {
                 IsDialogYearWarningVisible = true;
             }
@@ -289,6 +397,51 @@ public partial class MainWindowViewModel : ViewModelBase
         PlayPauseActiveTrackCommand = ReactiveCommand.Create((bool isPlayButtonChecked) =>
         {
             PlayPauseActiveTrack(isPlayButtonChecked);
+        });
+
+        // Subscription for volume change
+        this.WhenAnyValue(x => x.PlayerVolume)
+            .Where(_ => PlayingTrack is not null && _Player is not null)
+            .Subscribe(_ =>
+                {
+                    _Player!.SetVolume(PlayerVolume);
+                    if(PlayerVolume != 0)
+                    {
+                        tempVolume = PlayerVolume;
+                    }
+                }
+            );
+
+        MuteButtonCommand = ReactiveCommand.Create((bool isMuteButtonChecked) =>
+        {
+            if (isMuteButtonChecked)
+            {
+                PlayerVolume = 0;
+            }
+            else
+            {
+                PlayerVolume = tempVolume;
+            }
+        });
+
+        // Subscription for track seekbar change
+        this.WhenAnyValue(x => x.PlayingTrackPosition)
+            .Throttle(TimeSpan.FromMilliseconds(100), RxApp.MainThreadScheduler) 
+            .Where(newPosition => PlayingTrack is not null && _Player is not null &&
+                   Math.Abs(newPosition - _Player.GetPosition()) > 1)
+            .Subscribe(_ =>
+            {
+                _Player!.SeekToPosition(PlayingTrackPosition);
+            });
+
+        PlayNextCommand = ReactiveCommand.Create(() =>
+        {
+            PlayNextTrack();
+        });
+
+        PlayPreviousCommand = ReactiveCommand.Create(() =>
+        {
+            PlayPreviousTrack();
         });
     }
 }
