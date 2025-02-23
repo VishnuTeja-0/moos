@@ -8,39 +8,20 @@ using System.Reactive.Linq;
 using System.Collections.ObjectModel;
 using System.Configuration;
 using moos.Services;
-using NAudio.Wave;
-using Avalonia.Threading;
-using System.ComponentModel;
-using Avalonia.Controls;
+using System.IO;
+using System.Diagnostics;
+using System.Linq;
+using moos.Interfaces;
 
 
 namespace moos.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private readonly string libraryFolder = Environment.GetFolderPath(Environment.SpecialFolder.MyMusic) + "\\" + ConfigurationManager.AppSettings["libraryFolder"];
-    private readonly string defaultAlbumArtPath = ConfigurationManager.AppSettings["defaultAlbumArtPath"];
+    private readonly string LIBRARY_FOLDER = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), ConfigurationManager.AppSettings["libraryFolder"]);
+    private readonly string DEFAULT_ALBUM_ART_PATH = ConfigurationManager.AppSettings["defaultAlbumArtPath"];
+    private readonly string PROJECT_DIRECTORY = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
 
-    public ICommand DownloadYoutubeMp3DirectCommand { get; }
-
-    private int GetYoutubeVideo()
-    {
-        return 0;
-    }
-
-    private void LoadLibrary()
-    {
-        try
-        {
-            LibraryDataGridSource = LocalLibrary.LoadLocalCollection(libraryFolder);
-        }
-        catch(Exception ex)
-        {
-            //Logging
-            Console.WriteLine(ex.Message);
-        }
-        
-    }
 
     private Library _LocalLibrary = new();
     public Library LocalLibrary
@@ -55,12 +36,91 @@ public partial class MainWindowViewModel : ViewModelBase
         get => _libraryDataGridSource;
         set => this.RaiseAndSetIfChanged(ref _libraryDataGridSource, value);
     }
+    
+    private void LoadLibrary()
+    {
+        try
+        {
+            LibraryDataGridSource = LocalLibrary.LoadLocalCollection(LIBRARY_FOLDER);
+        }
+        catch(Exception ex)
+        {
+            //Logging and Error Display - Critical
+            Console.WriteLine(ex.Message);
+        }
+        
+    }
 
     private string? _YtUrl;
     public string? YtUrl
     {
         get => _YtUrl;
         set => this.RaiseAndSetIfChanged(ref _YtUrl, value);
+    }
+
+    private YTDownloaderService? _DownloadService;
+
+    private double? _DownloadProgress = 0;
+    public double? DownloadProgress
+    {
+        get => _DownloadProgress;
+        set => this.RaiseAndSetIfChanged(ref _DownloadProgress, value);
+    }
+
+    public ICommand DownloadYoutubeMp3DirectCommand { get; }
+    public ICommand CancelCurrentDownloadCommand { get; }
+    private IDisposable? _downloadTimerSubscription;
+
+    private async Task<bool> GetYoutubeAudio()
+    {
+        bool isDownloadSuccess = false, isMetadataSuccess = false;
+        string downloadResult = "";
+        try
+        {
+            if (YtUrl is not null)
+            {
+                _DownloadService = new YTDownloaderService();
+                StartDownloadPolling();
+                (isDownloadSuccess, downloadResult) =
+                    await _DownloadService.DownloadSong(YtUrl, LIBRARY_FOLDER, PROJECT_DIRECTORY);
+
+                if (isDownloadSuccess)
+                {
+                    LoadLibrary();
+                    Track newTrack = LibraryDataGridSource.First(track => track.FilePath == downloadResult);
+                    (isMetadataSuccess, newTrack) = await _DownloadService.FetchVideoMetadata(YtUrl, newTrack);
+                }
+            }
+        }
+        catch(Exception ex)
+        {
+            //Logging and Error Display
+            Console.WriteLine(ex.Message);
+        }
+
+        if (!isDownloadSuccess)
+        {
+            // Logging and Error Display
+            Console.WriteLine("There was an error in downloading audio from youtube: {0}", downloadResult);
+        }
+        if (!isMetadataSuccess)
+        {
+            // Logging and Error Display
+            Console.WriteLine("There was an error in fetching youtube metadata: {0}", downloadResult);
+        }
+        return isDownloadSuccess;
+    }
+    
+    private void StartDownloadPolling()
+    {
+        _downloadTimerSubscription = Observable
+            .Interval(TimeSpan.FromMilliseconds(100))
+            .SubscribeOn(TaskPoolScheduler.Default)
+            .ObserveOn(RxApp.MainThreadScheduler)
+            .Subscribe(_ =>
+            {
+                DownloadProgress = _DownloadService.GetProgressPercentage();
+            });
     }
 
     private Track? _SelectedTrack;
@@ -112,7 +172,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             try
             {
-                await Task.Run(() => { LocalLibrary.EditTrackMetadata(DialogTrack!, libraryFolder); });
+                await Task.Run(() => { LocalLibrary.EditTrackMetadata(DialogTrack!, LIBRARY_FOLDER); });
                 await Task.Run(() => { LoadLibrary(); });
                 SelectedTrack = DialogTrack;
                 IsMetadataDialogOpen = false;
@@ -146,7 +206,7 @@ public partial class MainWindowViewModel : ViewModelBase
     #endregion
 
     #region Player Commands
-    private PlayerService _Player;
+    private IAudioPlayer _Player;
 
     private Track? _PlayingTrack;
     public Track? PlayingTrack
@@ -184,7 +244,7 @@ public partial class MainWindowViewModel : ViewModelBase
             Playlist.AddTrack(track);
         }
 
-        _Player = new PlayerService();
+        _Player = AudioPlayerFactory.CreatePlayer();
         _Player.PlayTrack(track.FilePath);
         _Player!.SetVolume(PlayerVolume);
         IsPlaying = true;
@@ -208,7 +268,7 @@ public partial class MainWindowViewModel : ViewModelBase
         PlayingTrack = (Track)track!.Clone();
         if (PlayingTrack.AlbumArt is null)
         {
-            PlayingTrack.SetAlbumArt(defaultAlbumArtPath);
+            PlayingTrack.SetAlbumArt(DEFAULT_ALBUM_ART_PATH);
         }
     }
 
@@ -299,7 +359,7 @@ public partial class MainWindowViewModel : ViewModelBase
         get => _PlayerVolume;
         set => this.RaiseAndSetIfChanged(ref _PlayerVolume, value);
     }
-    private float tempVolume = 40;
+    private float tempVolume = 25;
 
     public ICommand MuteButtonCommand { get; }
 
@@ -327,9 +387,17 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         RxApp.MainThreadScheduler.Schedule(LoadLibrary);
 
-        DownloadYoutubeMp3DirectCommand = ReactiveCommand.Create(() => 
+        DownloadYoutubeMp3DirectCommand = ReactiveCommand.Create(async () => 
         {
-            GetYoutubeVideo();
+            await GetYoutubeAudio();
+        });
+
+        CancelCurrentDownloadCommand = ReactiveCommand.Create(() => 
+        {
+           if(_DownloadService is not null)
+           {
+                _DownloadService.cancelCurrentDownload();
+           } 
         });
 
         EnableMetadataOptionsCommand = ReactiveCommand.Create(() =>
@@ -443,5 +511,6 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             PlayPreviousTrack();
         });
+
     }
 }

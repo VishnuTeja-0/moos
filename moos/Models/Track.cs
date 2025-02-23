@@ -1,6 +1,5 @@
 ﻿using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using DynamicData;
 using System;
 using System.Collections;
 using System.Collections.ObjectModel;
@@ -10,7 +9,7 @@ using System.Linq;
 namespace moos.Models
 {
     public class Track(string title, string filePath, TimeSpan duration,
-        ObservableCollection<string> artists, string album = "", string year = "", string? lyrics = "",
+        ObservableCollection<string>? artists, string album = "", string year = "", string? lyrics = "",
         Bitmap? albumArt = null) : ICloneable, IEquatable<Track>
     {
         public string Title { get; set; } = title;
@@ -56,7 +55,7 @@ namespace moos.Models
         public object Clone()
         {
             ObservableCollection<string> clonedArtists = [];
-            if (artists is not null && artists.Count > 0)
+            if (Artists is not null && Artists.Count > 0)
             {
                 foreach (var item in (IEnumerable)Artists)
                 {

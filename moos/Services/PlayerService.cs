@@ -1,11 +1,11 @@
 ﻿using NAudio.Wave;
 using System;
-using System.ComponentModel;
-using T = System.Timers;
+using moos.Interfaces;
+
 
 namespace moos.Services
 {
-    public class PlayerService
+    public class PlayerService : IAudioPlayer
     {
         private WaveOutEvent? outputDevice;
         private AudioFileReader? audioFile;
@@ -67,8 +67,7 @@ namespace moos.Services
                     newPosition -= newPosition % audioFile.WaveFormat.BlockAlign;
                 }
 
-                newPosition = Math.Min(newPosition, audioFile.Length);
-                newPosition = Math.Max(newPosition, 0);
+                newPosition = Math.Clamp(newPosition, 0, audioFile.Length);
 
                 audioFile.Position = newPosition;
             }
@@ -85,9 +84,5 @@ namespace moos.Services
 
             return time;
         }
-
-        //public event EventHandler<StoppedEventArgs>? TrackFinished;
-
-        //public event T.ElapsedEventHandler? PlayingTrackTick;
     }
 }

@@ -3,7 +3,6 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Reactive.Linq;
 using System.Threading.Tasks;
 
 
@@ -28,7 +27,7 @@ namespace moos.Models
                 foreach (string filePath in Directory.GetFiles(folderPath, "*.mp3"))
                 {
                     var tfile = TagLib.File.Create(filePath);
-                    string title = tfile.Tag.Title;
+                    string title = tfile.Tag.Title ?? Path.GetFileNameWithoutExtension(filePath);
                     TimeSpan duration = tfile.Properties.Duration;
                     ObservableCollection<string> artists = new ObservableCollection<string>(tfile.Tag.Performers);
                     string album = tfile.Tag.Album;
@@ -38,7 +37,8 @@ namespace moos.Models
             }
             else 
             {
-                throw new DirectoryNotFoundException($"Local folder not found at \"{folderPath}\"");
+                Directory.CreateDirectory(folderPath);
+                //throw new DirectoryNotFoundException($"Local folder not found at \"{folderPath}\"");
             }
 
             return LocalLibraryCollection;
@@ -57,9 +57,5 @@ namespace moos.Models
             await Task.Delay(500);
         }
 
-        public void DownloadSong(string url)
-        {
-
-        }
     }
 }
