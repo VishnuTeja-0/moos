@@ -12,17 +12,24 @@ using System.IO;
 using System.Diagnostics;
 using System.Linq;
 using moos.Interfaces;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Media.Imaging;
 
 
 namespace moos.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private readonly string LIBRARY_FOLDER = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), ConfigurationManager.AppSettings["libraryFolder"]);
-    private readonly string DEFAULT_ALBUM_ART_PATH = ConfigurationManager.AppSettings["defaultAlbumArtPath"];
-    private readonly string PROJECT_DIRECTORY = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
-
-
+    private static readonly string LIBRARY_FOLDER = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), ConfigurationManager.AppSettings["libraryFolder"]);
+    private static readonly string DEFAULT_ALBUM_ART_PATH = ConfigurationManager.AppSettings["defaultAlbumArtPath"];
+    private static readonly string PROJECT_DIRECTORY = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
+    private static readonly float DEFAULT_PLAYING_VOLUME = float.Parse(ConfigurationManager.AppSettings["defaultPlayingVolume"]);
+    private static readonly double DEFAULT_PLAYING_SPEED = Double.Parse(ConfigurationManager.AppSettings["defaultPlayingSpeed"]);
+    private static readonly double DEFAULT_PLAYING_PITCH = Double.Parse(ConfigurationManager.AppSettings["defaultPlayingPitch"]);
+    
+    #region Library Commands
     private Library _LocalLibrary = new();
     public Library LocalLibrary
     {   
@@ -120,6 +127,12 @@ public partial class MainWindowViewModel : ViewModelBase
             .Subscribe(_ =>
             {
                 DownloadProgress = _DownloadService.GetProgressPercentage();
+
+                if (DownloadProgress == 0)
+                {
+                    _downloadTimerSubscription?.Dispose();
+                    _downloadTimerSubscription = null;
+                }
             });
     }
 
@@ -129,7 +142,8 @@ public partial class MainWindowViewModel : ViewModelBase
         get => _SelectedTrack;
         set => this.RaiseAndSetIfChanged(ref _SelectedTrack, value);
     }
-
+    #endregion
+    
     #region Metadata Commands 
     private Track? _DialogTrack;
     public Track? DialogTrack
@@ -207,12 +221,19 @@ public partial class MainWindowViewModel : ViewModelBase
 
     #region Player Commands
     private IAudioPlayer _Player;
-
+    
     private Track? _PlayingTrack;
     public Track? PlayingTrack
     {
         get => _PlayingTrack;
         set => this.RaiseAndSetIfChanged(ref _PlayingTrack, value);
+    }
+
+    private Bitmap? _PlayingTrackAlbumArt;
+    public Bitmap? PlayingTrackAlbumArt
+    {
+        get => _PlayingTrackAlbumArt;
+        set => this.RaiseAndSetIfChanged(ref _PlayingTrackAlbumArt, value);
     }
 
     private bool _IsPlaying = false;
@@ -230,7 +251,7 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     public ICommand PlaySingleTrackCommand {  get; }
-
+    
     private IDisposable? _playbackTimerSubscription;
 
     private void SetAndPlayTrack(Track track)
@@ -270,6 +291,8 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             PlayingTrack.SetAlbumArt(DEFAULT_ALBUM_ART_PATH);
         }
+
+        PlayingTrackAlbumArt = PlayingTrack.AlbumArt;
     }
 
     private void StartPlaybackTimer()
@@ -289,7 +312,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
             });
     }
-
+    
     public ICommand PlayNextCommand { get; }
 
     private void PlayNextTrack()
@@ -353,13 +376,13 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private float _PlayerVolume = 25;
+    private float _PlayerVolume = DEFAULT_PLAYING_VOLUME;
     public float PlayerVolume
     {
         get => _PlayerVolume;
         set => this.RaiseAndSetIfChanged(ref _PlayerVolume, value);
     }
-    private float tempVolume = 25;
+    private float tempVolume = DEFAULT_PLAYING_VOLUME;
 
     public ICommand MuteButtonCommand { get; }
 
@@ -373,13 +396,34 @@ public partial class MainWindowViewModel : ViewModelBase
             this.RaisePropertyChanged(nameof(DisplayPlayingPosition));
         }
     }
-
     public string DisplayPlayingPosition
     {
-        get
+        get { return TimeSpan.FromSeconds(PlayingTrackPosition).ToString("mm\\:ss"); }
+    }
+
+    public ICommand ChangeTrackSpeedCommand { get; }
+    public ICommand ChangeTrackPitchCommand { get; }
+
+    private double _PlayingTrackSpeed = DEFAULT_PLAYING_SPEED;
+    public double PlayingTrackSpeed
+    {
+        get => _PlayingTrackSpeed;
+        set => this.RaiseAndSetIfChanged(ref _PlayingTrackSpeed, value);
+    }
+    
+    private double _PlayingTrackPitch = DEFAULT_PLAYING_PITCH;
+    public double PlayingTrackPitch
+    {
+        get => _PlayingTrackPitch;
+        set
         {
-            return TimeSpan.FromSeconds(PlayingTrackPosition).ToString("mm\\:ss");
+            this.RaiseAndSetIfChanged(ref _PlayingTrackPitch, value);
+            this.RaisePropertyChanged(nameof(DisplayPlayingPitch));
         }
+    }
+    public string DisplayPlayingPitch
+    {
+        get {return PlayingTrackPitch.ToString("0.0");}
     }
     #endregion
 
@@ -512,5 +556,36 @@ public partial class MainWindowViewModel : ViewModelBase
             PlayPreviousTrack();
         });
 
+        ChangeTrackSpeedCommand = ReactiveCommand.Create((bool? isIncrease) =>
+        {
+            if (isIncrease is null)
+            {
+                PlayingTrackSpeed = DEFAULT_PLAYING_SPEED;
+            }
+            else if (isIncrease.Value)
+            {
+                PlayingTrackSpeed = Math.Min(150, PlayingTrackSpeed + 5);
+            }
+            else
+            {
+                PlayingTrackSpeed = Math.Max(50, PlayingTrackSpeed - 5);
+            }
+        });
+        ChangeTrackPitchCommand = ReactiveCommand.Create((bool? isIncrease) =>
+        {
+            if (isIncrease is null)
+            {
+                PlayingTrackPitch = DEFAULT_PLAYING_PITCH;
+            }
+            else if (isIncrease.Value)
+            {
+                PlayingTrackPitch = Math.Min(5, PlayingTrackPitch + 0.5);
+            }
+            else
+            {
+                PlayingTrackPitch = Math.Max(-5, PlayingTrackPitch - 0.5);
+            }
+        });
+        
     }
 }

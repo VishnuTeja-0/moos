@@ -1,9 +1,13 @@
+using System;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.ReactiveUI;
+using Avalonia.Threading;
 using moos.ViewModels;
-using System.Diagnostics;
 
 namespace moos.Views;
 
@@ -12,7 +16,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     public MainWindow()
     {
         InitializeComponent();
-
+        //TrackNameBounceEffect();
     }
 
     public void SetTrackSelection(object source, TappedEventArgs args)

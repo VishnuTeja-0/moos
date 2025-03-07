@@ -4,6 +4,7 @@ using OpenTK.Audio.OpenAL;
 using OpenTK.Audio;
 using moos.Interfaces;
 using NAudio.Wave;
+using NLayer.NAudioSupport;
 
 namespace moos.Services;
 
@@ -95,11 +96,12 @@ public class LinuxPlayerService : IAudioPlayer
 
     private (byte[], ALFormat, int) DecodeMp3(string filePath)
     {
+        // var builder = new Mp3FileReader.FrameDecompressorBuilder(waveFormat => new Mp3FrameDecompressor(waveFormat));
         audioFile = new AudioFileReader(filePath);
-        using var pcmStream = WaveFormatConversionStream.CreatePcmStream(audioFile);
+        //using var pcmStream = WaveFormatConversionStream.CreatePcmStream(audioFile);
         using var memStream = new MemoryStream();
         
-        pcmStream.CopyTo(memStream);
+        audioFile.CopyTo(memStream);
         
         return (memStream.ToArray(), ALFormat.Stereo16, audioFile.WaveFormat.SampleRate);
     }
