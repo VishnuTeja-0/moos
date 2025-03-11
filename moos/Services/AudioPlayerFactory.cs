@@ -14,7 +14,8 @@ public static class AudioPlayerFactory
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            return new LinuxPlayerService();
+            //return new OpenALPlayerService();
+            return new SoundFlowPlayerService();
         }
         else
         {

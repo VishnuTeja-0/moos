@@ -18,7 +18,6 @@ namespace moos.Services
                 audioFile = new AudioFileReader(filePath);
                 outputDevice.Init(audioFile);
                 
-
                 outputDevice.Play();
             }
             catch (Exception ex)

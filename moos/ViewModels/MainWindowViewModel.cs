@@ -501,7 +501,7 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         });
 
-        PlaySingleTrackCommand = ReactiveCommand.Create(() =>
+        PlaySingleTrackCommand = ReactiveCommand.Create( () =>
         {
             SetAndPlayTrack(SelectedTrack!);
         });
