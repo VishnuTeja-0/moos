@@ -22,12 +22,7 @@ namespace moos.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    private static readonly string LIBRARY_FOLDER = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), ConfigurationManager.AppSettings["libraryFolder"]);
-    private static readonly string DEFAULT_ALBUM_ART_PATH = ConfigurationManager.AppSettings["defaultAlbumArtPath"];
-    private static readonly string PROJECT_DIRECTORY = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
-    private static readonly float DEFAULT_PLAYING_VOLUME = float.Parse(ConfigurationManager.AppSettings["defaultPlayingVolume"]);
-    private static readonly double DEFAULT_PLAYING_SPEED = Double.Parse(ConfigurationManager.AppSettings["defaultPlayingSpeed"]);
-    private static readonly double DEFAULT_PLAYING_PITCH = Double.Parse(ConfigurationManager.AppSettings["defaultPlayingPitch"]);
+    
     
     #region Library Commands
     private Library _LocalLibrary = new();
@@ -48,7 +43,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            LibraryDataGridSource = LocalLibrary.LoadLocalCollection(LIBRARY_FOLDER);
+            LibraryDataGridSource = LocalLibrary.LoadLocalCollection(Constants.LibraryFolder);
         }
         catch(Exception ex)
         {
@@ -89,7 +84,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 _DownloadService = new YTDownloaderService();
                 StartDownloadPolling();
                 (isDownloadSuccess, downloadResult) =
-                    await _DownloadService.DownloadSong(YtUrl, LIBRARY_FOLDER, PROJECT_DIRECTORY);
+                    await _DownloadService.DownloadSong(YtUrl, Constants.LibraryFolder, Constants.ProjectDirectory);
 
                 if (isDownloadSuccess)
                 {
@@ -186,7 +181,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             try
             {
-                await Task.Run(() => { LocalLibrary.EditTrackMetadata(DialogTrack!, LIBRARY_FOLDER); });
+                await Task.Run(() => { LocalLibrary.EditTrackMetadata(DialogTrack!, Constants.LibraryFolder); });
                 await Task.Run(() => { LoadLibrary(); });
                 SelectedTrack = DialogTrack;
                 IsMetadataDialogOpen = false;
@@ -289,7 +284,7 @@ public partial class MainWindowViewModel : ViewModelBase
         PlayingTrack = (Track)track!.Clone();
         if (PlayingTrack.AlbumArt is null)
         {
-            PlayingTrack.SetAlbumArt(DEFAULT_ALBUM_ART_PATH);
+            PlayingTrack.SetAlbumArt(Constants.DefaultAlbumArtPath);
         }
 
         PlayingTrackAlbumArt = PlayingTrack.AlbumArt;
@@ -376,13 +371,13 @@ public partial class MainWindowViewModel : ViewModelBase
         }
     }
 
-    private float _PlayerVolume = DEFAULT_PLAYING_VOLUME;
+    private float _PlayerVolume = Constants.DefaultPlayingVolume;
     public float PlayerVolume
     {
         get => _PlayerVolume;
         set => this.RaiseAndSetIfChanged(ref _PlayerVolume, value);
     }
-    private float tempVolume = DEFAULT_PLAYING_VOLUME;
+    private float tempVolume = Constants.DefaultPlayingVolume;
 
     public ICommand MuteButtonCommand { get; }
 
@@ -404,14 +399,14 @@ public partial class MainWindowViewModel : ViewModelBase
     public ICommand ChangeTrackSpeedCommand { get; }
     public ICommand ChangeTrackPitchCommand { get; }
 
-    private double _PlayingTrackSpeed = DEFAULT_PLAYING_SPEED;
+    private double _PlayingTrackSpeed = Constants.DefaultPlayingSpeed;
     public double PlayingTrackSpeed
     {
         get => _PlayingTrackSpeed;
         set => this.RaiseAndSetIfChanged(ref _PlayingTrackSpeed, value);
     }
     
-    private double _PlayingTrackPitch = DEFAULT_PLAYING_PITCH;
+    private double _PlayingTrackPitch = Constants.DefaultPlayingPitch;
     public double PlayingTrackPitch
     {
         get => _PlayingTrackPitch;
@@ -560,7 +555,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             if (isIncrease is null)
             {
-                PlayingTrackSpeed = DEFAULT_PLAYING_SPEED;
+                PlayingTrackSpeed = Constants.DefaultPlayingSpeed;
             }
             else if (isIncrease.Value)
             {
@@ -575,7 +570,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             if (isIncrease is null)
             {
-                PlayingTrackPitch = DEFAULT_PLAYING_PITCH;
+                PlayingTrackPitch = Constants.DefaultPlayingPitch;
             }
             else if (isIncrease.Value)
             {

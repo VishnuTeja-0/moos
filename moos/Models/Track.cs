@@ -73,7 +73,11 @@ namespace moos.Models
 
         public void SetAlbumArt(string filePath)
         {
-            this.AlbumArt = new Bitmap(AssetLoader.Open(new Uri(filePath)));
+            Uri fileUri = new Uri(filePath);
+            if (AssetLoader.Exists(fileUri))
+            {
+                this.AlbumArt = new Bitmap(AssetLoader.Open(fileUri));
+            }
         }
 
         private static Bitmap CopyBitmap(Bitmap original)
