@@ -9,4 +9,6 @@ public interface IAudioPlayer
     void SetVolume(float volume);
     void SeekToPosition(double seconds);
     double GetPosition();
+    void SetPitch(float pitch);
+    void SetSpeed(float speed);
 }

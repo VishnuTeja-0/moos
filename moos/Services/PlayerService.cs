@@ -1,6 +1,8 @@
 ﻿using NAudio.Wave;
 using System;
 using moos.Interfaces;
+using NAudio.Wave.SampleProviders;
+using VarispeedDemo.SoundTouch;
 
 
 namespace moos.Services
@@ -9,21 +11,42 @@ namespace moos.Services
     {
         private WaveOutEvent? outputDevice;
         private AudioFileReader? audioFile;
+        private SmbPitchShiftingSampleProvider? pitch;
+        private VarispeedSampleProvider? speed;
+
 
         public void PlayTrack(string filePath)
         {
             try
             {
-                outputDevice = new WaveOutEvent();
+                outputDevice = new WaveOutEvent()
+                {
+                    DesiredLatency = 200,
+                    NumberOfBuffers = 3
+                };
                 audioFile = new AudioFileReader(filePath);
-                outputDevice.Init(audioFile);
+
+                speed = new VarispeedSampleProvider(
+                        audioFile.ToSampleProvider(),
+                        100,
+                        new SoundTouchProfile(true, false)
+                        );
+
+                pitch = new SmbPitchShiftingSampleProvider(
+                    speed,
+                    2048,
+                    10,
+                    1.0f);
+
+                outputDevice.Init(pitch);
                 
                 outputDevice.Play();
             }
             catch (Exception ex)
             {
-                // Logging and error display
+                // Logging and error bubble
                 Console.WriteLine(ex.Message);
+                throw;
             }
         }
 
@@ -40,7 +63,9 @@ namespace moos.Services
         public void StopTrack()
         {
             outputDevice!.Stop();
-            outputDevice.Dispose();
+            pitch = null;
+            speed = null;
+            outputDevice!.Dispose();
             outputDevice = null;
             audioFile!.Dispose();
             audioFile = null;
@@ -67,8 +92,9 @@ namespace moos.Services
                 }
 
                 newPosition = Math.Clamp(newPosition, 0, audioFile.Length);
-
+                
                 audioFile.Position = newPosition;
+                speed!.Reposition();
             }
         }
 
@@ -82,6 +108,24 @@ namespace moos.Services
             }
 
             return time;
+        }
+
+        public void SetSpeed(float newSpeed)
+        {
+            if (outputDevice is not null && audioFile is not null)
+            {
+                float speedChange = newSpeed / 100;
+                speed!.PlaybackRate = speedChange;
+            }
+        }
+
+        public void SetPitch(float newPitch)
+        {
+            if (outputDevice is not null && audioFile is not null)
+            {
+                float semitoneChange = (float)Math.Pow(2, (newPitch / 0.5f) / 12);
+                pitch!.PitchFactor = semitoneChange;
+            }
         }
     }
 }
