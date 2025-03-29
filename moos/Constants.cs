@@ -14,8 +14,8 @@ namespace moos
         public static readonly string DefaultAlbumArtPath;
         public static readonly string ProjectDirectory;
         public static readonly float DefaultPlayingVolume;
-        public static readonly double DefaultPlayingSpeed;
-        public static readonly double DefaultPlayingPitch;
+        public static readonly float DefaultPlayingSpeed;
+        public static readonly float DefaultPlayingPitch;
 
         static Constants()
         {
@@ -23,8 +23,8 @@ namespace moos
             DefaultAlbumArtPath = ConfigurationManager.AppSettings["defaultAlbumArtPath"] ?? "";
             ProjectDirectory = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName ?? "";
             DefaultPlayingVolume = float.Parse(ConfigurationManager.AppSettings["defaultPlayingVolume"] ?? "0");
-            DefaultPlayingSpeed = Double.Parse(ConfigurationManager.AppSettings["defaultPlayingSpeed"] ?? "0");
-            DefaultPlayingPitch = Double.Parse(ConfigurationManager.AppSettings["defaultPlayingPitch"] ?? "0");
+            DefaultPlayingSpeed = float.Parse(ConfigurationManager.AppSettings["defaultPlayingSpeed"] ?? "0");
+            DefaultPlayingPitch = float.Parse(ConfigurationManager.AppSettings["defaultPlayingPitch"] ?? "0");
         }
 
     }

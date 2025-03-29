@@ -276,6 +276,8 @@ public partial class MainWindowViewModel : ViewModelBase
             _playbackTimerSubscription = null;
             _Player.StopTrack();
             PlayingTrackPosition = 0;
+            PlayingTrackSpeed = Constants.DefaultPlayingSpeed;
+            PlayingTrackPitch = Constants.DefaultPlayingPitch;
         }
     }
 
@@ -296,11 +298,10 @@ public partial class MainWindowViewModel : ViewModelBase
             .Interval(TimeSpan.FromMilliseconds(300))
             .SubscribeOn(TaskPoolScheduler.Default)
             .ObserveOn(RxApp.MainThreadScheduler)
-
             .Subscribe(_ =>
             {
                 PlayingTrackPosition = _Player.GetPosition();
-                if (PlayingTrackPosition > PlayingTrack?.Duration.TotalSeconds)
+                if (Math.Floor(PlayingTrackPosition) >= Math.Floor(PlayingTrack!.Duration.TotalSeconds))
                 {
                     IsPlaying = false;
                     PlayNextTrack();
@@ -357,16 +358,12 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         else
         {
-            if (Math.Floor(PlayingTrackPosition) == Math.Floor(PlayingTrack!.Duration.TotalSeconds))
+            if (Math.Floor(PlayingTrackPosition) >= Math.Floor(PlayingTrack!.Duration.TotalSeconds))
             {
                 PlayingTrackPosition = 0;
-                _Player.PlayTrack(PlayingTrack.FilePath);
+                _Player!.SeekToPosition(0);
             }
-            else
-            {
-                _Player!.ResumeTrack();
-            }
-
+            _Player!.ResumeTrack();
             IsPlaying = true;
         }
     }
@@ -399,15 +396,15 @@ public partial class MainWindowViewModel : ViewModelBase
     public ICommand ChangeTrackSpeedCommand { get; }
     public ICommand ChangeTrackPitchCommand { get; }
 
-    private double _PlayingTrackSpeed = Constants.DefaultPlayingSpeed;
-    public double PlayingTrackSpeed
+    private float _PlayingTrackSpeed = Constants.DefaultPlayingSpeed;
+    public float PlayingTrackSpeed
     {
         get => _PlayingTrackSpeed;
         set => this.RaiseAndSetIfChanged(ref _PlayingTrackSpeed, value);
     }
     
-    private double _PlayingTrackPitch = Constants.DefaultPlayingPitch;
-    public double PlayingTrackPitch
+    private float _PlayingTrackPitch = Constants.DefaultPlayingPitch;
+    public float PlayingTrackPitch
     {
         get => _PlayingTrackPitch;
         set
@@ -574,13 +571,29 @@ public partial class MainWindowViewModel : ViewModelBase
             }
             else if (isIncrease.Value)
             {
-                PlayingTrackPitch = Math.Min(5, PlayingTrackPitch + 0.5);
+                PlayingTrackPitch = Math.Min(5, PlayingTrackPitch + 0.5f);
             }
             else
             {
-                PlayingTrackPitch = Math.Max(-5, PlayingTrackPitch - 0.5);
+                PlayingTrackPitch = Math.Max(-5, PlayingTrackPitch - 0.5f);
             }
         });
-        
+
+        // Subscriptions for speed and pitch change
+        this.WhenAnyValue(x => x.PlayingTrackSpeed)
+            .Throttle(TimeSpan.FromMilliseconds(100), RxApp.MainThreadScheduler)
+            .Where(_ => PlayingTrack is not null && _Player is not null)
+            .Subscribe(_ =>
+            {
+                _Player!.SetSpeed(PlayingTrackSpeed);
+            });
+
+        this.WhenAnyValue(x => x.PlayingTrackPitch)
+            .Throttle(TimeSpan.FromMilliseconds(100), RxApp.MainThreadScheduler)
+            .Where(_ => PlayingTrack is not null && _Player is not null)
+            .Subscribe(_ =>
+            {
+                _Player!.SetPitch(PlayingTrackPitch);
+            });
     }
 }
