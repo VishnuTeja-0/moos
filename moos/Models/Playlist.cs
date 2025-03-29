@@ -9,29 +9,20 @@ namespace moos.Models
 {
     public class Playlist
     {
-        public ObservableCollection<Track>? CurrentPlaylist;
+        public string Name { get; private set; } = "Untitled";
+        private ObservableCollection<Track> CurrentPlaylist = [];
         private int PlayerPosition = 0;
 
-        public void AddTrack(Track track)
+        public ObservableCollection<Track> AddTrack(Track track)
         {
-            if(CurrentPlaylist is null)
-            {
-                CurrentPlaylist = new ObservableCollection<Track>();
-            }
-
             CurrentPlaylist.Add(track);
+            return CurrentPlaylist;
         }
 
-        public void RemoveTrack(string filePath)
+        public ObservableCollection<Track> RemoveTrack(string filePath)
         {
-            if(CurrentPlaylist is not null)
-            {
-                CurrentPlaylist.Remove(CurrentPlaylist.First(track => track.FilePath == filePath));
-                if (CurrentPlaylist.Count == 0)
-                {
-                    CurrentPlaylist = null;
-                }
-            }
+            CurrentPlaylist.Remove(CurrentPlaylist.First(track => track.FilePath == filePath));
+            return CurrentPlaylist;
         }
 
         public Track? ReturnTrack(int? newPlayerPosition = null)
@@ -56,6 +47,11 @@ namespace moos.Models
             return CurrentPlaylist!.ElementAt(PlayerPosition);        
         }
 
-
+        public ObservableCollection<Track> ReorderPlaylist(string filePath, int newIndex)
+        {
+            int currentIndex = CurrentPlaylist.IndexOf(CurrentPlaylist.First(track => track.FilePath == filePath));
+            CurrentPlaylist.Move(currentIndex, newIndex);
+            return CurrentPlaylist;
+        }
     }
 }

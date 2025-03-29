@@ -250,6 +250,13 @@ public partial class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _Playlist, value);
     }
 
+    private ObservableCollection<Track> _CurrentPlaylist = [];
+    public ObservableCollection<Track> CurrentPlaylist
+    {
+        get => _CurrentPlaylist;
+        set => this.RaiseAndSetIfChanged(ref _CurrentPlaylist, value);
+    }
+
     public ICommand PlaySingleTrackCommand {  get; }
     
     private IDisposable? _playbackTimerSubscription;
@@ -259,10 +266,10 @@ public partial class MainWindowViewModel : ViewModelBase
         ResetPlayback();
         InitializeTrack(track);
 
-        if(Playlist is null || Playlist.CurrentPlaylist is null || Playlist.CurrentPlaylist.Count == 1)
+        if(Playlist is null || CurrentPlaylist is null || CurrentPlaylist.Count == 1)
         {
             Playlist = new Playlist();
-            Playlist.AddTrack(track);
+            CurrentPlaylist = Playlist.AddTrack(track);
         }
 
         _Player = AudioPlayerFactory.CreatePlayer();

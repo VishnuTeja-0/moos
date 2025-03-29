@@ -399,3 +399,11 @@ FodyWeavers.xsd
 
 .moos/idea/*
 .moos/vscode/*
+
+ffmpeg
+yt-dlp
+ffmpeg.exe
+yt-dlp.exe
+runtimes
+moos/Services/OpenALPlayerService.cs
+moos/Services/SoundFlowPlayerService.cs
