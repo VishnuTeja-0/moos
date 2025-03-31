@@ -9,6 +9,12 @@ namespace VarispeedDemo.SoundTouch
         private const string SoundTouchDllName = "SoundTouch.dll";
 
         /// <summary>
+        /// Set path to the SoundTouch DLL.
+        /// </summary>
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetDllDirectory(string pathName);
+
+        /// <summary>
         /// Create a new instance of SoundTouch processor.
         /// </summary>
         [DllImport(SoundTouchDllName, CallingConvention = CallingConvention.Cdecl)]

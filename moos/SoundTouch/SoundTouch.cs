@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using moos;
 
 namespace VarispeedDemo.SoundTouch
 {
@@ -13,8 +16,19 @@ namespace VarispeedDemo.SoundTouch
         {
             is64Bit = Marshal.SizeOf<IntPtr>() == 8;
 
-            handle = is64Bit ? SoundTouchInterop64.soundtouch_createInstance() :
+            bool isDllFound = is64Bit ?
+                SoundTouchInterop64.SetDllDirectory(Constants.SoundTouchDllPath) :
+                SoundTouchInterop32.SetDllDirectory(Constants.SoundTouchDllPath);
+            if (isDllFound)
+            {
+                handle = is64Bit ? SoundTouchInterop64.soundtouch_createInstance() :
                 SoundTouchInterop32.soundtouch_createInstance();
+            }
+            else
+            {
+                throw new FileNotFoundException("SoundTouch DLL not found");
+            }
+            
         }
 
         public string VersionString
