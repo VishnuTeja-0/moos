@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.ReactiveUI;
@@ -17,6 +18,11 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
         InitializeComponent();
         //TrackNameBounceEffect();
+
+        this.GetObservable(HeightProperty).Subscribe(height =>
+        {
+            OnWindowHeightChanged(height);
+        });
     }
 
     public void SetTrackSelection(object source, TappedEventArgs args)
@@ -47,7 +53,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         var vm = (MainWindowViewModel)DataContext!;
         if (args.Key == Avalonia.Input.Key.Enter && vm.NewArtist is not null)
         {
-            
             vm.EnterNewDialogArtistCommand.Execute(null);
         }
 
@@ -70,4 +75,20 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         var vm = (MainWindowViewModel)DataContext!;
         vm.SetMetadataFormActionsCommand.Execute(null);
     }
+
+    private void OnWindowHeightChanged(double newHeight)
+    {
+        DataGrid libraryGrid = this.FindControl<DataGrid>("GridLibrary");
+        StackPanel librarySection = this.FindControl<StackPanel>("SectionLibrary");
+        var libraryHeightValue = newHeight * 0.5;
+        libraryGrid.Height = libraryHeightValue;
+        librarySection.MinHeight = libraryHeightValue;
+        
+        DataGrid playlistGrid = this.FindControl<DataGrid>("GridPlaylist");
+        StackPanel playlistSection = this.FindControl<StackPanel>("SectionLibrary");
+        var playlistHeightValue = newHeight * 0.3;
+        playlistGrid.Height = playlistHeightValue;
+        playlistSection.MinHeight = playlistHeightValue;
+    }
+    
 }

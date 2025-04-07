@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
         xmlns:system="clr-namespace:System;assembly=System.Runtime"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="800"
         x:Class="moos.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
@@ -42,7 +42,7 @@
               <Setter Property="Foreground" Value="Black" />
             </Style>
             <Style Selector="Button#BtnCancel:pointerover /template/ ContentPresenter">
-              <Setter Property="Background" Value="Pink" />
+              <Setter Property="Background" Value="IndianRed" />
             </Style>
             <Style Selector="Button#BtnReset:pointerover /template/ ContentPresenter">
               <Setter Property="Background" Value="WhiteSmoke" />
@@ -53,7 +53,7 @@
           </StackPanel.Styles>
           <Button Name="BtnCancel"
             Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=dialogHost:DialogHost}, Path=CloseDialogCommand}"
-            BorderBrush="Pink">
+            BorderBrush="IndianRed">
             Cancel
           </Button>
           <Button Name="BtnReset"
@@ -73,6 +73,9 @@
           <Grid.Styles>
             <Style Selector="TextBox">
               <Setter Property="Margin" Value ="5" />
+              <Style Selector="^:focus /template/ Border#PART_BorderElement">
+                <Setter Property="BorderBrush" Value="DarkCyan" />
+              </Style>
             </Style>
             <Style Selector="TextBlock">
               <Setter Property="Margin" Value ="5" />
@@ -129,32 +132,38 @@
       <StackPanel Margin="0">
         <StackPanel.Background>
           <LinearGradientBrush StartPoint="0%, 20%" EndPoint="100%, 80%">
-            <GradientStop Color="Black" Offset="0.0" />
-            <GradientStop Color="DarkSlateGray" Offset="0.15" />
-            <GradientStop Color="DarkCyan" Offset="0.7" />
-            <GradientStop Color="DarkSlateGray" Offset="0.85" />
-            <GradientStop Color="Black" Offset="1.0" />
+            <GradientStop Color="DarkSlateGray" Offset="0.0" />
+            <GradientStop Color="DarkCyan" Offset="0.25" />
+            <GradientStop Color="DarkSlateGray" Offset="1.0" />
           </LinearGradientBrush>
         </StackPanel.Background>
         
         <DockPanel Height="{Binding $parent[Window].Bounds.Height}">
-          <!-- Library -->
           <StackPanel DockPanel.Dock="Top">
-            
+            <StackPanel.Styles>
+              <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+                <Setter Property="BorderBrush" Value="DarkCyan" />
+              </Style>
+            </StackPanel.Styles>
             <!-- Downloader -->
             <Grid ShowGridLines="True" Margin="5"
                 ColumnDefinitions="1*, 3*, 1*" RowDefinitions="Auto, Auto">
               <Label Grid.Row="0" Grid.Column="0" Margin="10"
                       TextElement.FontSize="12">
-                Enter YouTube URL
+                Enters YouTube URL
               </Label>
               <TextBox Name="TxtUrl" Text="{Binding YtUrl}" Watermark="https://youtube.com/watch..."
                     Grid.Row="0" Grid.Column="1" Margin="0 5" />
               <Button Grid.Row="0" Grid.Column="2" Margin="10 5"
-                  CornerRadius="4" Background="Green"
+                  CornerRadius="4" Background="ForestGreen"
                   TextElement.Foreground="White" Padding="5"
                   Command="{Binding DownloadYoutubeMp3DirectCommand}"
                   IsDefault="True">
+                <Button.Styles>
+                  <Style Selector="Button:pointerover /template/ ContentPresenter">
+                    <Setter Property="Background" Value="DarkGreen" />
+                  </Style>
+                </Button.Styles>
                 <StackPanel Orientation="Horizontal">
                   <PathIcon Data="{StaticResource settings_regular}" Height="14"/>
                   <TextBlock Text="Convert" />
@@ -176,14 +185,14 @@
                     </StackPanel>
               </Button>
             </Grid>
-
-            <Grid ShowGridLines="True" Margin="10 15"
-                ColumnDefinitions="4*, 2*" RowDefinitions="Auto">
-              <!-- Library -->
-              <StackPanel Grid.Row="0" Grid.Column="0">
+            
+            <!-- Library -->
+            <Grid ShowGridLines="True" Margin="10 15, 0, 15"
+                ColumnDefinitions="4*, 0.5*, 2*" RowDefinitions="Auto">
+              <StackPanel Name="SectionLibrary" Grid.Row="0" Grid.Column="0">
                 <!-- Search and Track Options -->
-                <Grid ShowGridLines="True" Margin="5 0"
-                      ColumnDefinitions="4*, 7*" RowDefinitions="Auto">
+                <Grid ShowGridLines="True" Margin="5 0 0 0"
+                      ColumnDefinitions="4*, 6.25*, 0.75*" RowDefinitions="Auto">
                   <Border Grid.Row="0" Grid.Column="0" BorderBrush="Black" CornerRadius="4"
                           BorderThickness="1" Margin="5 0">
                     <TextBox Watermark="Search library">
@@ -200,11 +209,20 @@
                         <Setter Property="Foreground" Value="White" />
                         <Setter Property="Padding" Value="5" />
                         <Style Selector="^ PathIcon">
-                          <Setter Property="Height" Value="14"></Setter>
+                          <Setter Property="Height" Value="14" />
+                        </Style>
+                        <Style Selector="^#ButtonEditMetadata:pointerover /template/ ContentPresenter">
+                          <Setter Property="Background" Value="DarkTurquoise" />
+                        </Style>
+                        <Style Selector="^#ButtonDeleteTrack:pointerover /template/ ContentPresenter">
+                          <Setter Property="Background" Value="Salmon" />
+                        </Style>
+                        <Style Selector="^#ButtonAddPlaying:pointerover /template/ ContentPresenter">
+                          <Setter Property="Background" Value="MediumSeaGreen" />
                         </Style>
                       </Style>
                     </StackPanel.Styles>
-                    <Button Classes="button-library" Background="DodgerBlue"
+                    <Button Name="ButtonEditMetadata" Classes="button-library" Background="DodgerBlue"
                             IsEnabled="{Binding IsLibraryButtonEnabled}"
                             Command="{Binding OpenMetadataDialogCommand}">
                       <StackPanel Orientation="Horizontal">
@@ -212,14 +230,14 @@
                         <TextBlock Text="Edit Metadata" />
                       </StackPanel>
                     </Button>
-                    <Button Classes="button-library" Background="IndianRed"
+                    <Button Name="ButtonDeleteTrack" Classes="button-library" Background="IndianRed"
                             IsEnabled="{Binding IsLibraryButtonEnabled}">
                       <StackPanel Orientation="Horizontal">
                         <PathIcon Data="{StaticResource delete_regular}" />
                         <TextBlock Text="Delete Track" />
                       </StackPanel>
                     </Button>
-                    <Button Classes="button-library" Background="SeaGreen"
+                    <Button Name="ButtonAddPlaying" Classes="button-library" Background="SeaGreen"
                             IsEnabled="{Binding IsLibraryButtonEnabled}">
                       <StackPanel Orientation="Horizontal">
                         <PathIcon Data="{StaticResource add_regular}" />
@@ -228,6 +246,15 @@
                       </StackPanel>
                     </Button>
                   </StackPanel>
+                  <Button Grid.Row="0" Grid.Column="2" Name="ButtonReloadLibrary" 
+                          Background="rgba(36,36,36,1)" Height="30" HorizontalAlignment="Stretch">
+                    <Button.Styles>
+                      <Style Selector="Button:pointerover /template/ ContentPresenter">
+                        <Setter Property="Background" Value="DimGray" />
+                      </Style>
+                    </Button.Styles>
+                    <PathIcon Data="{StaticResource arrow_sync_regular}" Height="14" />
+                  </Button>
                 </Grid>
                 <!-- Track List -->
                 <StackPanel>
@@ -236,12 +263,12 @@
                     <TextBlock Text="No library folder was found! Start by adding some songs!" 
                           Padding="20"/>
                   </Panel>     
-                  <DataGrid Margin="0 10" Height="200"
-                          ItemsSource="{Binding LibraryDataGridSource}" 
-                          SelectedItem="{Binding SelectedTrack, Mode=TwoWay}"
-                          Tapped="SetTrackSelection" DoubleTapped="PlaySingleTrack"
-                          GridLinesVisibility="None" IsReadOnly="True" 
-                          IsVisible="{Binding LibraryDataGridSource.Count}">
+                  <DataGrid Name="GridLibrary" Margin="0 10" CornerRadius="2"
+                            ItemsSource="{Binding LibraryDataGridSource}" 
+                            SelectedItem="{Binding SelectedTrack, Mode=TwoWay}"
+                            Tapped="SetTrackSelection" DoubleTapped="PlaySingleTrack"
+                            GridLinesVisibility="None" IsReadOnly="True" Background="rgba(36, 36, 36, 1)" 
+                            IsVisible="{Binding LibraryDataGridSource.Count}">
                     <DataGrid.Styles>
                       <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
                         <Setter Property="Fill" Value="DarkCyan" />
@@ -274,13 +301,41 @@
               </StackPanel>
               
               <!-- Playlist -->
-              <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Right">
-                <Border BorderBrush="DimGray"
-                        BorderThickness="2"
-                        >
+              <StackPanel Name="SectionPlaylist" Grid.Row="0" Grid.Column="2">
+                <Border BorderBrush="rgba(36,36,36,1)" BorderThickness="2" CornerRadius="4 4 0 0" BoxShadow="-5 5 15 0 Black">
                   <TabControl>
-                    <TabItem Header="Now Playing">
-                      <StackPanel>
+                    <TabControl.Styles>
+                      <Style Selector="TabControl">
+                        <Setter Property="Background" Value="rgba(36,36,36,1)" />
+                        <Style Selector="^ WrapPanel">
+                          <Setter Property="Background" Value="Black" />
+                          <Setter Property="Margin" Value="2,1" />
+                        </Style>
+                      </Style>
+                      <Style Selector="TabItem">
+                        <Setter Property="FontSize" Value="16" />
+                        <Setter Property="Background" Value="rgba(50,50,50,1)" />
+                        <Setter Property="Margin" Value="2,4, 2, 0" />
+                        <Setter Property="CornerRadius" Value="4" />
+                        <Style Selector="^:selected">
+                          <Style Selector="^ /template/ Border#PART_SelectedPipe">
+                            <Setter Property="IsVisible" Value="False" />
+                          </Style>
+                          <Setter Property="Background" Value="DarkCyan" />
+                        </Style>
+                        <Style Selector="^:pointerover /template/ Border#PART_LayoutRoot">
+                          <Setter Property="Background" Value="rgba(200, 200, 200, 0.5)" />
+                        </Style>
+                        <Style Selector="^:pointerover:selected /template/ Border#PART_LayoutRoot">
+                          <Setter Property="Background" Value="DarkCyan" />
+                        </Style>
+                      </Style>
+                    </TabControl.Styles>
+                    <TabItem>
+                      <TabItem.Header>
+                        <TextBlock Text="Now Playing" />
+                      </TabItem.Header>
+                      <StackPanel Classes="tabContent">
                         <TextBlock Text="Add some songs to get started!"
                                    IsVisible="{Binding !CurrentPlaylist.Count}"/>
                         <Grid ColumnDefinitions="1*, 1*, 1*, 1*" RowDefinitions="Auto, Auto, Auto"
@@ -288,39 +343,79 @@
                               IsVisible="{Binding CurrentPlaylist.Count}">
                           <Grid.Styles>
                             <Style Selector="Button.button-playlist">
-                              <Setter Property="Margin" Value="5" />
-                              <Setter Property="Padding" Value="2" />
-                              <Style Selector="^ PathIcon">
-                                <Setter Property="Height" Value="14" />
+                              <Setter Property="Margin" Value="0 5 5 5" />
+                              <Setter Property="Padding" Value="2 5" />
+                              <Setter Property="FontSize" Value="12" />
+                              <Setter Property="HorizontalAlignment" Value="Stretch" />
+                              <Style Selector="^ > StackPanel">
+                                <Setter Property="HorizontalAlignment" Value="Center" />
+                                <Style Selector="^ > PathIcon">
+                                  <Setter Property="Height" Value="12" />
+                                </Style>
+                                <Style Selector="^ > TextBlock">
+                                  <Setter Property="LineHeight" Value="12" />
+                                </Style>
+                              </Style>
+                              <Style Selector="^#ButtonSavePlaylist:pointerover /template/ ContentPresenter">
+                                <Setter Property="Background" Value="LightGray" />
+                              </Style>
+                              <Style Selector="^#ButtonRemoveTrack:pointerover /template/ ContentPresenter">
+                                <Setter Property="Background" Value="Salmon" />
+                              </Style>
+                            </Style>
+                            <Style Selector="TextBox#TextPlaylistTitle">
+                              <Setter Property="BorderBrush" Value="Black" />
+                              <Style Selector="^:pointerover /template/ Border#PART_BorderElement">
+                                <Setter Property="BorderBrush" Value="Black" />
+                              </Style>
+                              <Style Selector="^:focus /template/ Border#PART_BorderElement">
+                                <Setter Property="BorderBrush" Value="DarkCyan" />
                               </Style>
                             </Style>
                           </Grid.Styles>
-                          <TextBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Margin="5"
-                                   Text="{Binding Playlist.Name}" />
-                          <Button Classes="button-playlist" Grid.Row="1" Grid.Column="0" Background="LightGray">
+                          <TextBox Name="TextPlaylistTitle" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 5"
+                                   Text="{Binding Playlist.Name, Mode=TwoWay}" />
+                          <Button Name="ButtonSavePlaylist" Classes="button-playlist" Grid.Row="1" Grid.Column="0" Background="DarkGray">
                             <StackPanel Orientation="Horizontal">
                               <PathIcon Data="{StaticResource save_regular}" />
                               <TextBlock Text="Save" />
                             </StackPanel>
                           </Button>
-                          <Button Classes="button-playlist" Grid.Row="1" Grid.Column="1" Background="IndianRed">
+                          <Button Name="ButtonRemoveTrack" Classes="button-playlist" Grid.Row="1" Grid.Column="1" Background="IndianRed">
                             <StackPanel Orientation="Horizontal">
                               <PathIcon Data="{StaticResource dismiss_regular}" />
                               <TextBlock Text="Remove" />
                             </StackPanel>
                           </Button>
-                          <DataGrid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4" 
+                          <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4">
+                            <DataGrid Name="GridPlaylist"
                                     ItemsSource="{Binding CurrentPlaylist}"
-                                    CanUserReorderColumns="True" CanUserSortColumns="False"
+                                    CanUserReorderColumns="False" CanUserSortColumns="False"
                                     SelectionMode="Extended"
                                     GridLinesVisibility="None" IsReadOnly="True"
-                                    Background="DarkSlateGray">
+                                    Background="DarkSlateGray" CornerRadius="4">
                             <DataGrid.Styles>
-                              <Style Selector="DataGridCell:current /template/ Grid#FocusVisual">
-                                <Setter Property="IsVisible" Value="false" />
+                              <Style Selector="DataGridRow">
+                                <Style Selector="^:hover">
+                                  <Setter Property="Background" Value="DarkSlateGray" />
+                                </Style>
+                                <Setter Property="Margin" Value="0"/>
+                                <Setter Property="BorderBrush" Value="rgba(36, 36, 36, 0.4)" />
+                                <Setter Property="BorderThickness" Value="1" />
                               </Style>
-                              <Style Selector="DataGridRow:hover">
-                                <Setter Property="Background" Value="DarkSlateGray" />
+                              <Style Selector="DataGridCell">
+                                <Style Selector="^:current /template/ Grid#FocusVisual">
+                                  <Setter Property="IsVisible" Value="false" />
+                                </Style>
+                                <Style Selector="^ TextBlock">
+                                  <Setter Property="Margin" Value="0" />
+                                  <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                  <Setter Property="FontSize" Value="10" />
+                                  <Style Selector="^.saved-config">
+                                    <Setter Property="Margin" Value="0 5 10 0" />
+                                  </Style>
+                                </Style>
+                                <Setter Property="Padding" Value="10 5"/>
                               </Style>
                             </DataGrid.Styles>
                             <DataGrid.Columns>
@@ -332,17 +427,33 @@
                                   </DataTemplate>
                                 </DataGridTemplateColumn.CellTemplate>
                               </DataGridTemplateColumn>
-                              <DataGridTextColumn Header="Title" Width="2*" Binding="{Binding Title}" />
-                              <DataGridTextColumn Header="Artists" Width="3*" Binding="{Binding DisplayArtists}" />
-                              <DataGridTextColumn Header="Duration" Width="1*" Binding="{Binding DisplayDuration}" />
-                              <!-- <DataGridCheckBoxColumn ></DataGridCheckBoxColumn> -->
+                              <DataGridTemplateColumn Header="Track" Width="2.5*">
+                                <DataGridTemplateColumn.CellTemplate>
+                                  <DataTemplate>
+                                    <StackPanel VerticalAlignment="Center">
+                                      <TextBlock Text="{Binding Title}"/>
+                                      <TextBlock Text="{Binding DisplayArtists}" 
+                                                 Foreground="LightGray"/>
+                                      <StackPanel Orientation="Horizontal">
+                                        <TextBlock Classes="saved-config" Text="+0.5" Foreground="LightCyan"/>
+                                        <TextBlock Classes="saved-config" Text="90%" Foreground="LightCyan" />
+                                      </StackPanel>
+                                    </StackPanel>
+                                  </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                              </DataGridTemplateColumn>
+                              <DataGridTextColumn Header="Duration" Width="1*" FontSize="12"
+                                                  Binding="{Binding DisplayDuration}" />
                             </DataGrid.Columns>
                           </DataGrid>
+                          </Border>
                         </Grid>
                       </StackPanel>
                     </TabItem>
-                    <TabItem Header="Saved Playlists">
-                      
+                    <TabItem>
+                      <TabItem.Header>
+                        <TextBlock Text="Saved Playlists" />
+                      </TabItem.Header>
                     </TabItem>
                   </TabControl>
                 </Border>
@@ -478,7 +589,8 @@
                   <!-- Volume Seekbar -->
                   <StackPanel Grid.Row="0" Grid.Column="3" VerticalAlignment="Center">
                     <Grid ColumnDefinitions="1*, 5*" RowDefinitions="Auto">
-                      <ToggleButton Grid.Row="0" Grid.Column="0" Command="{Binding MuteButtonCommand}"
+                      <ToggleButton Grid.Row="0" Grid.Column="0"
+                                    Command="{Binding MuteButtonCommand}"
                                     CommandParameter="{Binding IsChecked, RelativeSource={RelativeSource Self}}"
                                     IsChecked="{Binding !PlayerVolume}">
                         <ToggleButton.Styles>
@@ -492,8 +604,9 @@
                             <Setter Property="Template">
                               <ControlTemplate>
                                 <Panel>
-                                  <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" Margin="{TemplateBinding Padding}"
-                                                    Background="Transparent" Padding="5"/>
+                                  <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" Margin="5 0 0 0"
+                                                    Background="Transparent" Padding="5" CornerRadius="100"
+                                                    Height="20" Width="20"/>
                                 </Panel>
                               </ControlTemplate>
                             </Setter>
@@ -509,6 +622,17 @@
                             <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
                               <Setter Property="Background" Value="Transparent" />
                             </Style>
+                          </Style>
+                          <Style Selector="ToggleButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                            <Setter Property="Background">
+                              <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" Radius="1"
+                                                   SpreadMethod="Pad">
+                                <GradientStops>
+                                  <GradientStop Color="DarkCyan" Offset="0.0" />
+                                  <GradientStop Color="Transparent" Offset="0.3" />
+                                </GradientStops>
+                              </RadialGradientBrush>
+                            </Setter>
                           </Style>
                         </ToggleButton.Styles>
                         <Panel>
@@ -551,6 +675,84 @@
                       </Slider>
                     </Grid>
                   </StackPanel>
+                  <StackPanel Grid.Row="0" Grid.Column="4" Orientation="Horizontal" 
+                              Margin="5" VerticalAlignment="Center">
+                    <ToggleButton IsThreeState="True">
+                      <ToggleButton.Styles>
+                        <Style Selector="ToggleButton">
+                          <Setter Property="Template">
+                            <ControlTemplate>
+                              <Panel>
+                                <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" Margin="5 0 0 0"
+                                                  Background="#242424" Padding="5" CornerRadius="{TemplateBinding CornerRadius}"
+                                                  Height="30" Width="30"/>
+                              </Panel>
+                            </ControlTemplate>
+                          </Setter>
+                          <Setter Property="Margin" Value="0 0 5 0" />
+                        </Style>
+                        <Style Selector="ToggleButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                          <Setter Property="Background">
+                            <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" Radius="1"
+                                                 SpreadMethod="Pad">
+                              <GradientStops>
+                                <GradientStop Color="DarkCyan" Offset="0.0" />
+                                <GradientStop Color="#242424" Offset="0.3" />
+                              </GradientStops>
+                            </RadialGradientBrush>
+                          </Setter>
+                        </Style>
+                        <Style Selector="PathIcon">
+                          <Setter Property="Width" Value="14" />
+                          <Setter Property="Height" Value="14" />
+                          <Setter Property="HorizontalAlignment" Value="Center" />
+                        </Style>
+                        <Style Selector="ToggleButton:unchecked">
+                          <Style Selector="^ PathIcon.repeat-off"><Setter Property="IsVisible" Value="True" /></Style>
+                          <Style Selector="^ PathIcon.repeat-all"><Setter Property="IsVisible" Value="False" /></Style>
+                          <Style Selector="^ StackPanel.repeat-one"><Setter Property="IsVisible" Value="False" /></Style>
+                        </Style>
+                        <Style Selector="ToggleButton:checked">
+                          <Style Selector="^ PathIcon.repeat-off"><Setter Property="IsVisible" Value="False" /></Style>
+                          <Style Selector="^ PathIcon.repeat-all"><Setter Property="IsVisible" Value="True" /></Style>
+                          <Style Selector="^ StackPanel.repeat-one"><Setter Property="IsVisible" Value="False" /></Style>
+                          <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+                            <Setter Property="Background" Value="#242424" />
+                          </Style>
+                        </Style>
+                        <Style Selector="ToggleButton:indeterminate">
+                          <Style Selector="^ PathIcon.repeat-off"><Setter Property="IsVisible" Value="False" /></Style>
+                          <Style Selector="^ PathIcon.repeat-all"><Setter Property="IsVisible" Value="False" /></Style>
+                          <Style Selector="^ StackPanel.repeat-one"><Setter Property="IsVisible" Value="True" /></Style>
+                          <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+                            <Setter Property="Background" Value="#242424" />
+                          </Style>
+                        </Style>
+                      </ToggleButton.Styles>
+                      <Panel>
+                        <PathIcon Classes="repeat-off" Data="{StaticResource arrow_repeat_all_off_regular}" />
+                        <PathIcon Classes="repeat-all" Data="{StaticResource arrow_repeat_all_regular}" Foreground="Cyan" />
+                        <StackPanel Classes="repeat-one" Orientation="Horizontal">
+                          <PathIcon Data="{StaticResource arrow_repeat_all_regular}" Foreground="Cyan" />
+                          <TextBlock Text="1" FontSize="8" Foreground="Cyan" Margin="2 0 0 2" HorizontalAlignment="Right"
+                                     />
+                        </StackPanel>
+                      </Panel>
+                    </ToggleButton>
+                    <Button Background="SeaGreen" VerticalAlignment="Center" Padding="6">
+                      <Button.Styles>
+                        <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                          <Setter Property="Background" Value="MediumSeaGreen" />
+                        </Style>
+                      </Button.Styles>
+                      <StackPanel Orientation="Horizontal">
+                        <PathIcon Data="{StaticResource add_regular}" 
+                                  Height="14" Width="14" Margin="2" />
+                        <PathIcon Data="{StaticResource caret_up_regular}" 
+                                  Height="14" Width="14" Margin="2" />
+                      </StackPanel>
+                    </Button>
+                  </StackPanel>
                 </Grid>
               </Expander.Header>
               
@@ -558,7 +760,7 @@
                     ColumnDefinitions="2*, 1*, 8*, 1*, 2*" RowDefinitions="Auto, Auto, Auto, Auto"
                     ShowGridLines="True">
                 <Grid.Styles>
-                  <Style Selector="Grid > Button.buttonTransformControl">
+                  <Style Selector="Grid > Button.button-transform-control">
                     <Setter Property="Background" Value="DarkCyan" />
                     <Setter Property="Foreground" Value="White" />
                     <Setter Property="CornerRadius" Value="200" />
@@ -567,7 +769,7 @@
                       <Setter Property="Height" Value="12"/>
                     </Style>
                   </Style>
-                  <Style Selector="Border.borderTransformValue">
+                  <Style Selector="Border.border-transform-value">
                     <Setter Property="HorizontalAlignment" Value="Center"/>
                     <Setter Property="Background" Value="Black"/>
                     <Setter Property="Padding" Value="5"/>
@@ -594,7 +796,9 @@
                   </Style>
                 </Grid.Styles>
                 
-                <Button Classes="buttonTransformControl" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center"
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Speed"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="16"/>
+                <Button Classes="button-transform-control" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Center"
                         Command="{Binding ChangeTrackSpeedCommand}">
                   <Button.CommandParameter>
                     <system:Boolean>False</system:Boolean>
@@ -605,7 +809,7 @@
                         Minimum="50" Maximum="150"
                         Value="{Binding PlayingTrackSpeed, Mode=TwoWay}"
                         TickFrequency="1" IsSnapToTickEnabled="True" />
-                <Button Classes="buttonTransformControl" Grid.Row="0" Grid.Column="3" HorizontalAlignment="Center"
+                <Button Classes="button-transform-control" Grid.Row="0" Grid.Column="3" HorizontalAlignment="Center"
                         Command="{Binding ChangeTrackSpeedCommand}">
                   <Button.CommandParameter>
                     <system:Boolean>True</system:Boolean>
@@ -615,8 +819,8 @@
                 
                 <StackPanel Grid.Row="1" Grid.Column="2">
                   <Grid ColumnDefinitions="5*, 1*, 2*, 1*, 5*" RowDefinitions="Auto">
-                    <Border Grid.Row="0" Grid.Column="2" Classes="borderTransformValue" >
-                      <TextBlock Text="{Binding PlayingTrackSpeed}"/>
+                    <Border Grid.Row="0" Grid.Column="2" Classes="border-transform-value" >
+                      <TextBlock Text="{Binding DisplayPlayingSpeed}"/>
                     </Border>
                     <Button Grid.Row="0" Grid.Column="3" Command="{Binding ChangeTrackSpeedCommand}">
                       <PathIcon Data="{StaticResource arrow_rotate_counterclockwise_regular}"/>
@@ -624,7 +828,11 @@
                   </Grid>
                 </StackPanel>
                 
-                <Button Classes="buttonTransformControl" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center"
+                <StackPanel Grid.Row="2" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center">
+                  <TextBlock Text="Pitch" FontSize="16" HorizontalAlignment="Center" />
+                  <TextBlock Text="(0.5 = 1 semitone)" Foreground="Gray" FontSize="12" HorizontalAlignment="Center" />
+                </StackPanel>
+                <Button Classes="button-transform-control" Grid.Row="2" Grid.Column="1" HorizontalAlignment="Center"
                         Command="{Binding ChangeTrackPitchCommand}">
                   <Button.CommandParameter>
                     <system:Boolean>False</system:Boolean>
@@ -635,7 +843,7 @@
                         Minimum="-5" Maximum="5" 
                         Value="{Binding PlayingTrackPitch, Mode=TwoWay}"
                         TickFrequency="0.1" IsSnapToTickEnabled="True"/>
-                <Button Classes="buttonTransformControl" Grid.Row="2" Grid.Column="3" HorizontalAlignment="Center"
+                <Button Classes="button-transform-control" Grid.Row="2" Grid.Column="3" HorizontalAlignment="Center"
                         Command="{Binding ChangeTrackPitchCommand}">
                   <Button.CommandParameter>
                     <system:Boolean>True</system:Boolean>
@@ -645,7 +853,7 @@
                 
                 <StackPanel Grid.Row="3" Grid.Column="2">
                   <Grid ColumnDefinitions="5*, 1*, 2*, 1*, 5*" RowDefinitions="Auto">
-                    <Border Grid.Row="0" Grid.Column="2" Classes="borderTransformValue" >
+                    <Border Grid.Row="0" Grid.Column="2" Classes="border-transform-value" >
                       <TextBlock Text="{Binding DisplayPlayingPitch}"/>
                     </Border>
                     <Button Grid.Row="0" Grid.Column="3" Command="{Binding ChangeTrackPitchCommand}">

@@ -51,6 +51,10 @@ namespace moos.Models
         {
             int currentIndex = CurrentPlaylist.IndexOf(CurrentPlaylist.First(track => track.FilePath == filePath));
             CurrentPlaylist.Move(currentIndex, newIndex);
+            if (currentIndex == PlayerPosition)
+            {
+                PlayerPosition = newIndex;
+            }
             return CurrentPlaylist;
         }
     }

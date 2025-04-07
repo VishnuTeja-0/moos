@@ -407,7 +407,16 @@ public partial class MainWindowViewModel : ViewModelBase
     public float PlayingTrackSpeed
     {
         get => _PlayingTrackSpeed;
-        set => this.RaiseAndSetIfChanged(ref _PlayingTrackSpeed, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _PlayingTrackSpeed, value);
+            this.RaisePropertyChanged(nameof(DisplayPlayingSpeed));
+        }
+    }
+
+    public string DisplayPlayingSpeed
+    {
+        get { return PlayingTrackSpeed.ToString() + "%"; }
     }
     
     private float _PlayingTrackPitch = Constants.DefaultPlayingPitch;
@@ -429,6 +438,12 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel()
     {
         RxApp.MainThreadScheduler.Schedule(LoadLibrary);
+        
+        // UI Test Commands
+        PlayingTrack = LibraryDataGridSource[1];
+        Playlist = new Playlist();
+        CurrentPlaylist = Playlist.AddTrack(LibraryDataGridSource[0]);
+        CurrentPlaylist = Playlist.AddTrack(LibraryDataGridSource[1]);
 
         DownloadYoutubeMp3DirectCommand = ReactiveCommand.Create(async () => 
         {

@@ -18,7 +18,7 @@ namespace moos.Models
         {
             get
             {
-                return Artists is not null ? string.Join(", ", Artists) : "";
+                return Artists is not null ? string.Join(", ", Artists) : "--";
             }
         }
         public string? Album { get; set; } = album;
@@ -50,7 +50,7 @@ namespace moos.Models
                 }
             }
         }
-        public string Year { get; set; } = year == "" ? DateTime.Now.Year.ToString() : year;
+        public string Year { get; set; } = year == "" || year == "0" ? DateTime.Now.Year.ToString() : year;
 
         public object Clone()
         {
