@@ -6,15 +6,9 @@ using System.Windows.Input;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Collections.ObjectModel;
-using System.Configuration;
 using moos.Services;
-using System.IO;
-using System.Diagnostics;
 using System.Linq;
 using moos.Interfaces;
-using Avalonia;
-using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Media.Imaging;
 
 
@@ -39,8 +33,17 @@ public partial class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _libraryDataGridSource, value);
     }
     
+    private bool? _IsLibraryLoading = false;
+    public bool? IsLibraryLoading
+    {
+        get => _IsLibraryLoading;
+        set => this.RaiseAndSetIfChanged(ref _IsLibraryLoading, value);
+    }
+    
+    public ICommand ReloadLibrary { get; }
     private void LoadLibrary()
     {
+        IsLibraryLoading = true;
         try
         {
             LibraryDataGridSource = LocalLibrary.LoadLocalCollection(Constants.LibraryFolder);
@@ -50,7 +53,7 @@ public partial class MainWindowViewModel : ViewModelBase
             //Logging and Error Display - Critical
             Console.WriteLine(ex.Message);
         }
-        
+        IsLibraryLoading = false;
     }
 
     private string? _YtUrl;
@@ -75,6 +78,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private async Task<bool> GetYoutubeAudio()
     {
+        IsLibraryLoading = true;
         bool isDownloadSuccess = false, isMetadataSuccess = false;
         string downloadResult = "";
         try
@@ -88,8 +92,10 @@ public partial class MainWindowViewModel : ViewModelBase
 
                 if (isDownloadSuccess)
                 {
+                    DownloadProgress = 90;
                     LoadLibrary();
                     Track newTrack = LibraryDataGridSource.First(track => track.FilePath == downloadResult);
+                    DownloadProgress = 100;
                     (isMetadataSuccess, newTrack) = await _DownloadService.FetchVideoMetadata(YtUrl, newTrack);
                 }
             }
@@ -107,9 +113,12 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         if (!isMetadataSuccess)
         {
-            // Logging and Error Display
+            // Logging
             Console.WriteLine("There was an error in fetching youtube metadata: {0}", downloadResult);
         }
+
+        IsLibraryLoading = false;
+        DownloadProgress = 0;
         return isDownloadSuccess;
     }
     
@@ -121,9 +130,9 @@ public partial class MainWindowViewModel : ViewModelBase
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(_ =>
             {
-                DownloadProgress = _DownloadService.GetProgressPercentage();
+                DownloadProgress = _DownloadService.GetProgressPercentage() * 0.8;
 
-                if (DownloadProgress == 0)
+                if (DownloadProgress >= 80)
                 {
                     _downloadTimerSubscription?.Dispose();
                     _downloadTimerSubscription = null;
@@ -444,6 +453,11 @@ public partial class MainWindowViewModel : ViewModelBase
         Playlist = new Playlist();
         CurrentPlaylist = Playlist.AddTrack(LibraryDataGridSource[0]);
         CurrentPlaylist = Playlist.AddTrack(LibraryDataGridSource[1]);
+
+        ReloadLibrary = ReactiveCommand.Create(() =>
+        {
+            LoadLibrary();
+        });
 
         DownloadYoutubeMp3DirectCommand = ReactiveCommand.Create(async () => 
         {

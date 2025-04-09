@@ -1,13 +1,9 @@
 using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.ReactiveUI;
-using Avalonia.Threading;
 using moos.ViewModels;
 
 namespace moos.Views;

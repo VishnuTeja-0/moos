@@ -247,13 +247,33 @@
                     </Button>
                   </StackPanel>
                   <Button Grid.Row="0" Grid.Column="2" Name="ButtonReloadLibrary" 
-                          Background="rgba(36,36,36,1)" Height="30" HorizontalAlignment="Stretch">
+                          Background="rgba(36,36,36,1)" Height="30" HorizontalAlignment="Stretch"
+                          IsEnabled="{Binding !IsLibraryLoading}"
+                          Command="{Binding ReloadLibrary}">
                     <Button.Styles>
                       <Style Selector="Button:pointerover /template/ ContentPresenter">
                         <Setter Property="Background" Value="DimGray" />
                       </Style>
+                      <Style Selector="Button:disabled PathIcon">
+                        <Style.Animations>
+                          <Animation Duration="0:0:3" IterationCount="Infinite" Easing="LinearEasing">
+                            <KeyFrame Cue="0%">
+                              <Setter Property="RotateTransform.Angle" Value="0" />
+                            </KeyFrame>
+                            <KeyFrame Cue="50%">
+                              <Setter Property="RotateTransform.Angle" Value="180" />
+                            </KeyFrame>
+                            <KeyFrame Cue="100%">
+                              <Setter Property="RotateTransform.Angle" Value="360" />
+                            </KeyFrame>
+                          </Animation>
+                        </Style.Animations>
+                      </Style>
                     </Button.Styles>
-                    <PathIcon Data="{StaticResource arrow_sync_regular}" Height="14" />
+                    <PathIcon Data="{StaticResource arrow_sync_regular}" Height="14">
+                      
+                      
+                    </PathIcon>
                   </Button>
                 </Grid>
                 <!-- Track List -->
@@ -465,6 +485,12 @@
           <StackPanel DockPanel.Dock="Bottom" HorizontalAlignment="Stretch">
             <Expander VerticalAlignment="Top" HorizontalAlignment="Stretch" Background="#222222">
               <!-- IsVisible="{Binding PlayingTrack, Converter={x:Static ObjectConverters.IsNotNull}}"> -->
+              <Expander.Styles>
+                <Style Selector="Expander:expanded /template/ Border#ExpanderContent">
+                  <Setter Property="Padding" Value="5" />
+                  <Setter Property="Height" Value="400" />
+                </Style>
+              </Expander.Styles>
               <Expander.Header>
                 <Grid Name="TrackPlayer" ColumnDefinitions="2.5*, 1.5*, 5.5*, 1.5*, 1*" RowDefinitions="60" Margin="0,0,30,0"
                       ShowGridLines="True">
