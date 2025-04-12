@@ -167,7 +167,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public ICommand OpenMetadataDialogCommand { get; }
     public ICommand ResetMetadataDialogCommand { get; }
 
-    private bool _IsMetadataDialogOpen = false;
+    private bool _IsMetadataDialogOpen = true;
     public bool IsMetadataDialogOpen
     {
         get => _IsMetadataDialogOpen;
@@ -453,6 +453,7 @@ public partial class MainWindowViewModel : ViewModelBase
         Playlist = new Playlist();
         CurrentPlaylist = Playlist.AddTrack(LibraryDataGridSource[0]);
         CurrentPlaylist = Playlist.AddTrack(LibraryDataGridSource[1]);
+        DialogTrack = LibraryDataGridSource[1];
 
         ReloadLibrary = ReactiveCommand.Create(() =>
         {
@@ -480,6 +481,10 @@ public partial class MainWindowViewModel : ViewModelBase
         OpenMetadataDialogCommand = ReactiveCommand.Create(() =>
         {
             DialogTrack = (Track) SelectedTrack!.Clone();
+            if (DialogTrack.AlbumArt is null)
+            {
+                DialogTrack.SetAlbumArt(Constants.DefaultAlbumArtPath);
+            }
             IsMetadataOptionEnabled = false;
             IsMetadataDialogOpen = true;
         });
@@ -487,6 +492,10 @@ public partial class MainWindowViewModel : ViewModelBase
         ResetMetadataDialogCommand = ReactiveCommand.Create(() =>
         {
             DialogTrack = (Track) SelectedTrack!.Clone();
+            if (DialogTrack.AlbumArt is null)
+            {
+                DialogTrack.SetAlbumArt(Constants.DefaultAlbumArtPath);
+            }
             IsMetadataOptionEnabled = false;
         });
 

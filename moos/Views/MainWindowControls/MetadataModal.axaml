@@ -1,0 +1,151 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+             xmlns:vm="clr-namespace:moos.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="500"
+             x:Class="moos.Views.MainWindowControls.MetadataModal"
+             x:DataType="vm:MainWindowViewModel">
+  
+  <DockPanel Width="400" Height="500">
+    <TextBlock DockPanel.Dock="Top" FontSize="20">Track Details</TextBlock>
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                HorizontalAlignment="Right" Spacing="5">
+      <StackPanel.Styles>
+        <Style Selector="Button">
+          <Setter Property="Background" Value="Transparent" />
+          <Setter Property="BorderThickness" Value="2" />
+          <Setter Property="FontWeight" Value="500" />
+        </Style>
+        <Style Selector="Button:pointerover /template/ ContentPresenter">
+          <Setter Property="Foreground" Value="Black" />
+        </Style>
+        <Style Selector="Button#BtnCancel:pointerover /template/ ContentPresenter">
+          <Setter Property="Background" Value="IndianRed" />
+        </Style>
+        <Style Selector="Button#BtnReset:pointerover /template/ ContentPresenter">
+          <Setter Property="Background" Value="WhiteSmoke" />
+        </Style>
+        <Style Selector="Button#BtnSubmit:pointerover /template/ ContentPresenter">
+          <Setter Property="Background" Value="Turquoise" />
+        </Style>
+      </StackPanel.Styles>
+      <Button Name="BtnCancel"
+        Command="{Binding RelativeSource={RelativeSource FindAncestor, AncestorType=dialogHost:DialogHost}, Path=CloseDialogCommand}"
+        BorderBrush="IndianRed">
+        Cancel
+      </Button>
+      <Button Name="BtnReset"
+        Command="{Binding ResetMetadataDialogCommand}" IsEnabled="{Binding IsMetadataOptionEnabled}"
+        BorderBrush="WhiteSmoke">
+          Reset Changes
+      </Button>
+      <Button Name="BtnSubmit"
+        Command="{Binding SubmitMetadataChangesCommand}" IsEnabled="{Binding IsMetadataOptionEnabled}"
+        BorderBrush="Turquoise">
+          Submit
+      </Button>
+    </StackPanel>
+    <Grid ShowGridLines="True" RowDefinitions="Auto, Auto, Auto, Auto, Auto, Auto, Auto"
+          ColumnDefinitions="1*, 3*" Margin="0 20"
+          KeyUp="CheckForDialogChanges">
+      <Grid.Styles>
+        <Style Selector="TextBox">
+          <Setter Property="Margin" Value ="5" />
+          <Style Selector="^:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="DarkCyan" />
+          </Style>
+        </Style>
+        <Style Selector="TextBlock.text-dialog-info">
+          <Setter Property="Margin" Value ="5" />
+          <Setter Property="TextAlignment" Value="Left" />
+          <Setter Property="FontSize" Value="12" />
+        </Style>
+        <Style Selector="Label">
+          <Setter Property="FontSize" Value="16" />
+          <Setter Property="Padding" Value="0 10 0 0" />
+        </Style>
+      </Grid.Styles>
+      <Border Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+              HorizontalAlignment="Stretch" Background="#242424" BoxShadow="inset 2 2 2 0 black">
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+          <Border Margin="10" BorderBrush="DimGray">
+            <Panel>
+              <Rectangle Width="100" Height="100" Fill="Black" />
+              <Image Margin="5" Width="100" Height="100"
+                     Source="{Binding DialogTrack.AlbumArt}"/>
+            </Panel>
+          </Border>
+         <StackPanel Orientation="Vertical" VerticalAlignment="Center"
+                     Spacing="5">
+           <StackPanel.Styles>
+             <Style Selector="Button">
+               <Setter Property="HorizontalAlignment" Value="Stretch" />
+             </Style>
+           </StackPanel.Styles>
+           <Button>
+             <StackPanel Orientation="Horizontal">
+               <TextBlock Text="Browse" />
+             </StackPanel>
+           </Button>
+           <Button>
+             <StackPanel Orientation="Horizontal">
+               <TextBlock Text="Search" />
+             </StackPanel>
+           </Button>
+         </StackPanel>
+        </StackPanel>  
+      </Border>
+      <Label Grid.Row="1" Grid.Column="0">Title</Label>
+      <TextBox Text="{Binding DialogTrack.Title, Mode=TwoWay}" 
+               Grid.Row="1" Grid.Column="1" />
+      <Label Grid.Row="2" Grid.Column="0">Artists</Label>
+      <TextBox Text="{Binding NewArtist}"
+               Grid.Row="2" Grid.Column="1"
+               KeyDown="EnterNewDialogArtist">
+        <TextBox.InnerLeftContent>
+          <ListBox ItemsSource="{Binding DialogTrack.Artists}">
+            <ListBox.Styles>
+              <Style Selector="ListBox">
+                <Setter Property="Margin" Value="5" />
+                <Style Selector="^ ListBoxItem">
+                  <Setter Property="Padding" Value="5" />
+                  <Style Selector="^:selected /template/ ContentPresenter#PART_ContentPresenter">
+                    <Setter Property="Background" Value="DarkCyan" />
+                  </Style>
+                </Style>
+              </Style>
+            </ListBox.Styles>
+            <ListBox.ItemsPanel>
+              <ItemsPanelTemplate>
+                <StackPanel Orientation="Horizontal" Spacing="5" />
+              </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="{Binding}" Margin="0 0 3 0"/>
+                  <PathIcon Data="{StaticResource dismiss_regular}" Height="10" Foreground="OrangeRed"
+                            Tapped="RemoveDialogArtist" />
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </TextBox.InnerLeftContent>
+      </TextBox>
+      <TextBlock Grid.Row="3" Grid.Column="1" Classes="text-dialog-info"
+                 Text="Press Enter to add new artist" Foreground="LightBlue" />
+      <Label Grid.Row="4" Grid.Column="0">Album</Label>
+      <TextBox Text="{Binding DialogTrack.Album, Mode=TwoWay}" 
+               Grid.Row="4" Grid.Column="1" />
+      <Label Grid.Row="5" Grid.Column="0">Year</Label>
+      <TextBox Text="{Binding DialogTrack.Year, Mode=TwoWay}" 
+               Grid.Row="5" Grid.Column="1" />
+      <TextBlock Grid.Row="6" Grid.Column="1"
+                 Text="Enter a valid year" Foreground="Pink" Classes="text-dialog-info"
+                 IsVisible="{Binding IsDialogYearWarningVisible}"/>
+    </Grid>
+  </DockPanel>
+  
+</UserControl>

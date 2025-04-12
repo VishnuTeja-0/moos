@@ -1,0 +1,138 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:moos.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="768"
+             x:Class="moos.Views.MainWindowControls.Library"
+             x:DataType="vm:MainWindowViewModel">
+  
+  <StackPanel Margin="0">
+    <!-- Search and Track Options -->
+    <Grid ShowGridLines="True" Margin="5 0 0 0"
+          ColumnDefinitions="4*, 6.25*, 0.75*" RowDefinitions="Auto">
+      <Border Grid.Row="0" Grid.Column="0" BorderBrush="Black" CornerRadius="4"
+              BorderThickness="1" Margin="5 0">
+        <TextBox Watermark="Search library">
+          <TextBox.InnerLeftContent>
+            <PathIcon Data="{StaticResource search_regular}" Margin="5" Height="16"/>
+          </TextBox.InnerLeftContent>
+        </TextBox>
+      </Border>
+      <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal">
+        <StackPanel.Styles>
+          <Style Selector="Button.button-library">
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Margin" Value="5 0" />
+            <Setter Property="Foreground" Value="White" />
+            <Setter Property="Padding" Value="5" />
+            <Style Selector="^ PathIcon">
+              <Setter Property="Height" Value="14" />
+            </Style>
+            <Style Selector="^#ButtonEditMetadata:pointerover /template/ ContentPresenter">
+              <Setter Property="Background" Value="DarkTurquoise" />
+            </Style>
+            <Style Selector="^#ButtonDeleteTrack:pointerover /template/ ContentPresenter">
+              <Setter Property="Background" Value="Salmon" />
+            </Style>
+            <Style Selector="^#ButtonAddPlaying:pointerover /template/ ContentPresenter">
+              <Setter Property="Background" Value="MediumSeaGreen" />
+            </Style>
+          </Style>
+        </StackPanel.Styles>
+        <Button Name="ButtonEditMetadata" Classes="button-library" Background="DodgerBlue"
+                IsEnabled="{Binding IsLibraryButtonEnabled}"
+                Command="{Binding OpenMetadataDialogCommand}">
+          <StackPanel Orientation="Horizontal">
+            <PathIcon Data="{StaticResource edit_regular}" />
+            <TextBlock Text="Edit Metadata" />
+          </StackPanel>
+        </Button>
+        <Button Name="ButtonDeleteTrack" Classes="button-library" Background="IndianRed"
+                IsEnabled="{Binding IsLibraryButtonEnabled}">
+          <StackPanel Orientation="Horizontal">
+            <PathIcon Data="{StaticResource delete_regular}" />
+            <TextBlock Text="Delete Track" />
+          </StackPanel>
+        </Button>
+        <Button Name="ButtonAddPlaying" Classes="button-library" Background="SeaGreen"
+                IsEnabled="{Binding IsLibraryButtonEnabled}">
+          <StackPanel Orientation="Horizontal">
+            <PathIcon Data="{StaticResource add_regular}" />
+            <TextBlock Text="Add to Playing" />
+            <PathIcon Data="{StaticResource caret_right_regular}" />
+          </StackPanel>
+        </Button>
+      </StackPanel>
+      <Button Grid.Row="0" Grid.Column="2" Name="ButtonReloadLibrary" 
+              Background="rgba(36,36,36,1)" Height="30" HorizontalAlignment="Stretch"
+              IsEnabled="{Binding !IsLibraryLoading}"
+              Command="{Binding ReloadLibrary}">
+        <Button.Styles>
+          <Style Selector="Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="DimGray" />
+          </Style>
+          <Style Selector="Button:disabled PathIcon">
+            <Style.Animations>
+              <Animation Duration="0:0:3" IterationCount="Infinite" Easing="LinearEasing">
+                <KeyFrame Cue="0%">
+                  <Setter Property="RotateTransform.Angle" Value="0" />
+                </KeyFrame>
+                <KeyFrame Cue="50%">
+                  <Setter Property="RotateTransform.Angle" Value="180" />
+                </KeyFrame>
+                <KeyFrame Cue="100%">
+                  <Setter Property="RotateTransform.Angle" Value="360" />
+                </KeyFrame>
+              </Animation>
+            </Style.Animations>
+          </Style>
+        </Button.Styles>
+        <PathIcon Data="{StaticResource arrow_sync_regular}" Height="14" />
+      </Button>
+    </Grid>
+    <!-- Track List -->
+    <StackPanel>
+      <Panel  Background="Black" Margin="10"
+              IsVisible="{Binding !LibraryDataGridSource.Count}">
+        <TextBlock Text="No library folder was found! Start by adding some songs!" 
+              Padding="20"/>
+      </Panel>     
+      <DataGrid Name="GridLibrary" Margin="0 10" CornerRadius="2"
+                ItemsSource="{Binding LibraryDataGridSource}" 
+                SelectedItem="{Binding SelectedTrack, Mode=TwoWay}"
+                Tapped="SetTrackSelection" DoubleTapped="PlaySingleTrack"
+                GridLinesVisibility="None" IsReadOnly="True" Background="rgba(36, 36, 36, 1)" 
+                IsVisible="{Binding LibraryDataGridSource.Count}">
+        <DataGrid.Styles>
+          <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
+            <Setter Property="Fill" Value="DarkCyan" />
+          </Style>
+          <Style Selector="DataGridCell TextBlock">
+            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+          </Style>
+          <Style Selector="DataGridCell:current /template/ Grid#FocusVisual">
+            <Setter Property="IsVisible" Value="false" />
+          </Style>
+        </DataGrid.Styles>
+        <DataGrid.Columns>
+          <DataGridTemplateColumn Header="" Width="0.5*">
+            <DataGridTemplateColumn.CellTemplate>
+              <DataTemplate>
+                <PathIcon Data="{StaticResource play_regular}" Width="12" Height="12"
+                          Foreground="Green" Background="Transparent" />
+              </DataTemplate>
+            </DataGridTemplateColumn.CellTemplate>
+          </DataGridTemplateColumn>
+          <DataGridTextColumn Header="Title" Width="2*" Binding="{Binding Title}" />
+          <DataGridTextColumn Header="Artists" Width="2.5*" Binding="{Binding DisplayArtists}" />
+          <DataGridTextColumn Header="Album" Width="2*" Binding="{Binding Album}" />
+          <DataGridTextColumn Header="Duration" Width="1.25*"
+                              Binding="{Binding DisplayDuration}" />
+          <DataGridTextColumn Header="Year" Width="1*" Binding="{Binding Year}" />
+        </DataGrid.Columns>
+      </DataGrid>
+    </StackPanel>
+  </StackPanel>
+  
+</UserControl>
