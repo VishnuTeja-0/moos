@@ -8,8 +8,10 @@ using System.Reactive.Linq;
 using System.Collections.ObjectModel;
 using moos.Services;
 using System.Linq;
+using Avalonia.Controls;
 using moos.Interfaces;
 using Avalonia.Media.Imaging;
+using moos.Views;
 
 
 namespace moos.ViewModels;
@@ -156,14 +158,6 @@ public partial class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _DialogTrack, value);
     }
 
-    private bool _IsLibraryButtonEnabled = false;
-    public bool IsLibraryButtonEnabled
-    {
-        get => _IsLibraryButtonEnabled;
-        set => this.RaiseAndSetIfChanged(ref _IsLibraryButtonEnabled, value); 
-    }
-
-    public ICommand EnableMetadataOptionsCommand { get; }
     public ICommand OpenMetadataDialogCommand { get; }
     public ICommand ResetMetadataDialogCommand { get; }
 
@@ -179,6 +173,28 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         get => _NewArtist;
         set => this.RaiseAndSetIfChanged(ref _NewArtist, value);
+    }
+    
+    public ICommand OpenAlbumArtWindowCommand { get; }
+
+    private async void OpenAlbumArtWindow(Window mainWindow)
+    {
+        var albumArtWindow = new AlbumArtSelectionWindow
+        {
+            DataContext = new AlbumArtSelectionWindowViewModel(
+                DialogTrack?.Title ?? "", 
+                DialogTrack?.DisplayArtists ?? "", 
+                DialogTrack?.Album ?? "",
+                ""),
+            WindowStartupLocation = WindowStartupLocation.CenterOwner
+        };
+        
+        var selectedBitmap = await albumArtWindow.ShowDialogWithResult(mainWindow);
+        if (selectedBitmap is not null)
+        {
+            DialogTrack!.AlbumArt = selectedBitmap;
+            IsMetadataOptionEnabled = true;
+        }
     }
 
     public ICommand SubmitMetadataChangesCommand { get; }
@@ -448,13 +464,6 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         RxApp.MainThreadScheduler.Schedule(LoadLibrary);
         
-        // UI Test Commands
-        PlayingTrack = LibraryDataGridSource[1];
-        Playlist = new Playlist();
-        CurrentPlaylist = Playlist.AddTrack(LibraryDataGridSource[0]);
-        CurrentPlaylist = Playlist.AddTrack(LibraryDataGridSource[1]);
-        DialogTrack = LibraryDataGridSource[1];
-
         ReloadLibrary = ReactiveCommand.Create(() =>
         {
             LoadLibrary();
@@ -471,11 +480,6 @@ public partial class MainWindowViewModel : ViewModelBase
            {
                 _DownloadService.cancelCurrentDownload();
            } 
-        });
-
-        EnableMetadataOptionsCommand = ReactiveCommand.Create(() =>
-        {
-            IsLibraryButtonEnabled = true;
         });
 
         OpenMetadataDialogCommand = ReactiveCommand.Create(() =>
@@ -497,6 +501,11 @@ public partial class MainWindowViewModel : ViewModelBase
                 DialogTrack.SetAlbumArt(Constants.DefaultAlbumArtPath);
             }
             IsMetadataOptionEnabled = false;
+        });
+
+        OpenAlbumArtWindowCommand = ReactiveCommand.Create((Window parentWindow) =>
+        {
+            OpenAlbumArtWindow(parentWindow);
         });
 
         SubmitMetadataChangesCommand = ReactiveCommand.Create(() =>

@@ -32,7 +32,8 @@
     </Style>
   </Window.Styles>
 
-  <dialogHost:DialogHost Identifier="MainDialogHost" CloseOnClickAway="True" IsOpen="{Binding IsMetadataDialogOpen}"
+  <dialogHost:DialogHost Identifier="MainDialogHost" CloseOnClickAway="True" 
+                         IsOpen="{Binding IsMetadataDialogOpen}"
                          Margin="{Binding $parent[Window].OffScreenMargin}">
     <dialogHost:DialogHost.DialogContent>
       <windowViews:MetadataModal />

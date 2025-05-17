@@ -12,11 +12,11 @@ public static class AudioPlayerFactory
         {
             return new PlayerService();
         }
-        //else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        //{
-        //    return new OpenALPlayerService();
-        //    return new SoundFlowPlayerService();
-        //}
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            return new SoundFlowPlayerService();
+            return new OpenALPlayerService();
+        }
         else
         {
             throw new PlatformNotSupportedException("The current platform is not supported.");

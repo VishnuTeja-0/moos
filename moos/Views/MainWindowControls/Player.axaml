@@ -8,8 +8,8 @@
              x:Class="moos.Views.MainWindowControls.Player"
              x:DataType="vm:MainWindowViewModel">
   
-  <Expander Name="ExpanderPlayer" VerticalAlignment="Top" HorizontalAlignment="Stretch" Background="#222222">
-    <!-- IsVisible="{Binding PlayingTrack, Converter={x:Static ObjectConverters.IsNotNull}}"> -->
+  <Expander Name="ExpanderPlayer" VerticalAlignment="Top" HorizontalAlignment="Stretch" Background="#222222"
+            IsVisible="{Binding PlayingTrack, Converter={x:Static ObjectConverters.IsNotNull}}">
     <Expander.Styles>
       <Style Selector="Expander:expanded /template/ Border#ExpanderContent">
         <Setter Property="Padding" Value="5" />

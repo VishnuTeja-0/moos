@@ -1,0 +1,197 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:moos.ViewModels"
+        xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
+        xmlns:id="clr-namespace:Avalonia.Xaml.Interactions.Draggable;assembly=Avalonia.Xaml.Interactions.Draggable"
+        xmlns:lb="clr-namespace:moos.Behaviors"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="moos.Views.AlbumArtSelectionWindow"
+        x:DataType="vm:AlbumArtSelectionWindowViewModel"
+        Title="Select Album Art"
+        WindowStartupLocation="CenterOwner"
+        Background="DarkSlateGray">
+    
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:AlbumArtSelectionWindowViewModel>
+            <x:Arguments>
+                <x:String>Get Out</x:String>
+                <x:String>Circa Survive</x:String>
+                <x:String>Blue Sky Noise</x:String>
+                <x:String>avares://moos/Assets/DefaultAlbumArt.png</x:String>
+            </x:Arguments>
+        </vm:AlbumArtSelectionWindowViewModel>
+    </Design.DataContext>
+    
+    <Grid RowDefinitions="Auto" ColumnDefinitions="5*, 2*" Height="{Binding $parent[Window].Bounds.Height}">
+        <Grid.Styles>
+            <StyleInclude Source="avares://Avalonia.Xaml.Interactions.Draggable/Styles.axaml" />
+            <Style Selector="Button > StackPanel">
+                <Setter Property="Orientation" Value="Horizontal" />
+                <Style Selector="^ > PathIcon">
+                    <Setter Property="Margin" Value="0 0 2 0" />
+                    <Setter Property="Height" Value="14" />
+                    <Setter Property="Width" Value="14" />
+                </Style>
+            </Style>
+            <Style Selector="Button.button-selector">
+                <Setter Property="IsEnabled" Value="{Binding !IsLoadingResults}" />
+                <Style Selector="^:disabled PathIcon.icon-loading">
+                    <Style.Animations>
+                        <Animation Duration="0:0:3" IterationCount="Infinite" Easing="LinearEasing">
+                            <KeyFrame Cue="0%">
+                                <Setter Property="RotateTransform.Angle" Value="0" />
+                            </KeyFrame>
+                            <KeyFrame Cue="50%">
+                                <Setter Property="RotateTransform.Angle" Value="180" />
+                            </KeyFrame>
+                            <KeyFrame Cue="100%">
+                                <Setter Property="RotateTransform.Angle" Value="360" />
+                            </KeyFrame>
+                        </Animation>
+                    </Style.Animations>
+                </Style>
+            </Style>
+        </Grid.Styles>
+        <Border Grid.Row="0" Grid.Column="0" BorderBrush="DarkGray"
+                BorderThickness="0, 0, 1, 0" Height="{Binding $parent[Grid].Bounds.Height}">
+            <StackPanel Name="SectionImageSelector" VerticalAlignment="Stretch">
+                <StackPanel.Styles>
+                    <Style Selector="TextBlock.label-section">
+                        <Setter Property="FontSize" Value="16" />
+                        <Setter Property="Margin" Value="0 0 0 10" />
+                    </Style>
+                    <Style Selector="StackPanel.section">
+                        <Setter Property="Margin" Value="10" />
+                    </Style>
+                </StackPanel.Styles>
+                <StackPanel Classes="section">
+                    <TextBlock Classes="label-section" Text="Browse Local Files" />
+                    <Border>
+                        <Button Classes="button-selector"
+                                Command="{Binding SelectLocalAlbumArtCommand}"
+                                CommandParameter="{Binding $parent[Window]}">
+                            <StackPanel>
+                                <PathIcon Classes="icon-loading" Data="{StaticResource arrow_sync_regular}" IsVisible="{Binding IsLoadingResults}"/>
+                                <PathIcon Data="{StaticResource folder_open_regular}" IsVisible="{Binding !IsLoadingResults}"/>
+                                <TextBlock Text="Browse" />
+                            </StackPanel>
+                        </Button>
+                    </Border>
+                </StackPanel>
+                <Separator Margin="0 20 0 0" HorizontalAlignment="Stretch" />
+                <StackPanel Classes="section">
+                    <TextBlock Classes="label-section" Text="Search Online" />
+                    <Grid RowDefinitions="Auto" ColumnDefinitions="3*, 0.5*, 3*, 0.5*, 3*, 2*" ShowGridLines="True">
+                        <StackPanel Grid.Row="0" Grid.Column="0">
+                            <Label>Track Title</Label>
+                            <TextBox Text="{Binding TrackTitle}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="2">
+                            <Label>Artists</Label>
+                            <TextBox Text="{Binding TrackArtists}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="4">
+                            <Label>Album</Label>
+                            <TextBox Text="{Binding TrackAlbum}" />
+                        </StackPanel>
+                        <Button Grid.Row="0" Grid.Column="5" Classes="button-selector"
+                                HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                Command="{Binding SearchAlbumArtCommand}">
+                            <StackPanel>
+                                <PathIcon Classes="icon-loading" Data="{StaticResource arrow_sync_regular}" IsVisible="{Binding IsLoadingResults}"/>
+                                <PathIcon Data="{StaticResource globe_search_regular}" IsVisible="{Binding !IsLoadingResults}" />
+                                <TextBlock Text="Search" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </StackPanel>
+                <Border Name="PaneResults" BorderBrush="DimGray" BorderThickness="1" BoxShadow="inset 2 2 2 0 Black"
+                        Padding="10" Margin="10 20" HorizontalAlignment="Stretch">
+                    <Panel HorizontalAlignment="Stretch">
+                        <Rectangle HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Fill="Transparent"
+                                   IsVisible="{Binding !AlbumArtSearchResults.Count}" />
+                        <ListBox ItemsSource="{Binding AlbumArtSearchResults}"
+                                 SelectedItem="{Binding SelectedAlbumArt, Mode=TwoWay}"
+                                 Background="Transparent" VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
+                                 IsVisible="{Binding AlbumArtSearchResults.Count}">
+                            <ListBox.Styles>
+                                <Style Selector="ListBoxItem:selected /template/ Border">
+                                    <Setter Property="BorderBrush" Value="Turquoise" />
+                                    <Setter Property="BorderThickness" Value="2" />
+                                </Style>
+                            </ListBox.Styles>
+                            <ListBox.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <WrapPanel />
+                                </ItemsPanelTemplate>
+                            </ListBox.ItemsPanel>
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Border BorderThickness="1" BorderBrush="DimGray" Margin="0">
+                                        <Image Source="{Binding}" Width="200" Height="200" Stretch="UniformToFill" />
+                                    </Border>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Panel>
+                </Border>
+            </StackPanel>
+        </Border>
+        
+        <StackPanel Grid.Row="0" Grid.Column="1" Name="SectionImageEditor"
+                    IsVisible="{Binding SelectedAlbumArt, Converter={x:Static ObjectConverters.IsNotNull}}">
+            <DockPanel Height="{Binding $parent[Window].Bounds.Height}">
+                <Border DockPanel.Dock="Top" Width="200" Height="200" Margin="10 20"
+                        BorderBrush="Transparent" BorderThickness="1"
+                        BoxShadow="inset 2 2 2 0 Black">
+                    <Canvas Name="CanvasSelectedImage" Width="200" Height="200">
+                        <Image Source="{Binding SelectedAlbumArt}"
+                               Width="200" Height="200" HorizontalAlignment="Center" />
+                        <Border Name="CropSelector" 
+                                Width="{Binding CropSide}" 
+                                Height="{Binding CropSide}"
+                                Canvas.Top = "{Binding CropY, Mode=TwoWay}" 
+                                Canvas.Left="{Binding CropX, Mode=TwoWay}"
+                                BorderBrush="DarkGray" BorderThickness="2" Background="#40FFFFFF" Cursor="SizeAll" ZIndex="1">
+                            <i:Interaction.Behaviors>
+                                <!-- <lb:ClampedCanvasDragBehavior XLimit="200" YLimit="200" /> -->
+                                <id:CanvasDragBehavior />
+                            </i:Interaction.Behaviors>
+                        </Border>
+                    </Canvas>
+                </Border>
+                <Border DockPanel.Dock="Bottom" BorderBrush="DarkGray" BorderThickness="0 1 0 0"
+                        HorizontalAlignment="Stretch" Padding="10">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="5">
+                        <Button Background="DarkCyan" Click="OnSaveButtonClick">
+                            <StackPanel>
+                                <PathIcon Data="{StaticResource save_regular}"/>
+                                <TextBlock Text="Save" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </Border>
+                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="5">
+                    <Button Background="DarkGray">
+                        <StackPanel>
+                            <PathIcon Data="{StaticResource arrow_rotate_counterclockwise_regular}"/>
+                            <TextBlock Text="Reset" />
+                        </StackPanel>
+                    </Button>
+                    <Button>
+                        <StackPanel>
+                            <PathIcon Data="{StaticResource crop_regular}" IsVisible="{Binding !IsEditMode}"/>
+                            <PathIcon Data="{StaticResource dismiss_regular}" IsVisible="{Binding IsEditMode}"/>
+                            <TextBlock Text="Crop" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
+            </DockPanel>
+        </StackPanel>
+    </Grid>
+    
+</Window>

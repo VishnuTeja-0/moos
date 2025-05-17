@@ -9,8 +9,8 @@ using System.Linq;
 namespace moos.Models
 {
     public class Track(string title, string filePath, TimeSpan duration,
-        ObservableCollection<string>? artists, string album = "", string year = "", string? lyrics = "",
-        Bitmap? albumArt = null) : ICloneable, IEquatable<Track>
+        ObservableCollection<string>? artists, string album = "", string year = "", Bitmap? albumArt = null, string? lyrics = "")
+        : ICloneable, IEquatable<Track>
     {
         public string Title { get; set; } = title;
         public ObservableCollection<string>? Artists { get; set; } = artists ?? ([]);
@@ -67,8 +67,8 @@ namespace moos.Models
                 }
             }
 
-            return new Track(Title, FilePath, Duration, clonedArtists, Album, Year, Lyrics,
-                AlbumArt is null ? null : CopyBitmap(AlbumArt));
+            return new Track(Title, FilePath, Duration, clonedArtists, Album, Year,
+                AlbumArt is null ? null : CopyBitmap(AlbumArt), Lyrics);
         }
 
         public void SetAlbumArt(string filePath)

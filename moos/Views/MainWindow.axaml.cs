@@ -1,8 +1,6 @@
 using System;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Interactivity;
 using Avalonia.ReactiveUI;
 using moos.ViewModels;
 using moos.Views.MainWindowControls;
@@ -16,6 +14,10 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
         InitializeComponent();
         this.GetObservable(HeightProperty).Subscribe(height => OnWindowHeightChanged(height));
+        
+        #if DEBUG
+        this.AttachDevTools();
+        #endif
     }
 
     private void OnWindowHeightChanged(double newHeight)

@@ -17,8 +17,6 @@ public partial class Library : UserControl
         var localLibraryGrid = (DataGrid)source;
         if (localLibraryGrid is not null && localLibraryGrid.SelectedItems.Count > 0)
         {
-            var vm = (MainWindowViewModel)DataContext!;
-            vm.EnableMetadataOptionsCommand.Execute(null);
         }
     }
 

@@ -5,6 +5,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Media.Imaging;
+using TagLib;
 
 
 namespace moos.Models
@@ -29,11 +31,18 @@ namespace moos.Models
                 {
                     var tfile = TagLib.File.Create(filePath);
                     string title = tfile.Tag.Title ?? Path.GetFileNameWithoutExtension(filePath);
+                    Bitmap? albumArt = null;
+                    var pictures = tfile.Tag.Pictures;
+                    if (pictures is not null && pictures.Length > 0)
+                    {
+                        using var stream = new MemoryStream(pictures[0].Data.Data);
+                        albumArt = new Bitmap(stream);
+                    }
                     TimeSpan duration = tfile.Properties.Duration;
                     ObservableCollection<string> artists = new ObservableCollection<string>(tfile.Tag.Performers);
                     string album = tfile.Tag.Album;
                     string year = tfile.Tag.Year.ToString();
-                    LocalLibraryCollection.Add(new Track(title, filePath, duration, artists, album, year));
+                    LocalLibraryCollection.Add(new Track(title, filePath, duration, artists, album, year, albumArt));
                 }
             }
             else 
@@ -50,6 +59,19 @@ namespace moos.Models
             string filePath = updatedTrack.FilePath;
 
             var tfile = TagLib.File.Create(filePath);
+            if (updatedTrack.AlbumArt is not null)
+            {
+                var memoryStream = new MemoryStream();
+                updatedTrack.AlbumArt.Save(memoryStream);
+                var picture = new Picture
+                {
+                    Type = PictureType.FrontCover,
+                    Description = "Cover",
+                    MimeType = System.Net.Mime.MediaTypeNames.Image.Png,
+                    Data = ByteVector.FromStream(memoryStream)
+                };
+                tfile.Tag.Pictures = [picture];
+            }
             tfile.Tag.Title = updatedTrack.Title;
             tfile.Tag.Performers = updatedTrack.Artists!.ToArray();
             tfile.Tag.Album = updatedTrack.Album;
@@ -57,6 +79,5 @@ namespace moos.Models
             tfile.Save();
             await Task.Delay(500);
         }
-
     }
 }
