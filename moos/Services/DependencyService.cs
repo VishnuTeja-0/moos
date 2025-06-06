@@ -6,11 +6,14 @@ using System.Threading.Tasks;
 public class DependencyService
 {
     private readonly string _projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
+    private string _ytdlpFile;
+    private string _ffmpegFile;
 
     public async Task LoadAppDependencies()
     {
-        string ytDlpPath = Path.Combine(_projectDirectory, "yt-dlp");
-        string ffmpegPath = Path.Combine(_projectDirectory, "ffmpeg");
+        SetDependencyNames();
+        string ytDlpPath = Path.Combine(_projectDirectory, _ytdlpFile);
+        string ffmpegPath = Path.Combine(_projectDirectory, _ffmpegFile);
 
         if(!File.Exists(ytDlpPath))
         {
@@ -26,6 +29,20 @@ public class DependencyService
             SetExecutablePermission(ffmpegPath);
         }
         
+    }
+
+    private void SetDependencyNames()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            _ytdlpFile = "yt-dlp.exe";
+            _ffmpegFile = "ffmpeg.exe";
+        }
+        else if(OperatingSystem.IsLinux())
+        {
+            _ytdlpFile = "yt-dlp";
+            _ffmpegFile = "ffmpeg";
+        }
     }
 
     private void SetExecutablePermission(string filePath)

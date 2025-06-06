@@ -10,20 +10,16 @@
         x:Class="moos.Views.AlbumArtSelectionWindow"
         x:DataType="vm:AlbumArtSelectionWindowViewModel"
         Title="Select Album Art"
+        Width="1024"
+        Height="768"
+        MinWidth="1024"
+        MinHeight="768"
         WindowStartupLocation="CenterOwner"
         Background="DarkSlateGray">
     
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:AlbumArtSelectionWindowViewModel>
-            <x:Arguments>
-                <x:String>Get Out</x:String>
-                <x:String>Circa Survive</x:String>
-                <x:String>Blue Sky Noise</x:String>
-                <x:String>avares://moos/Assets/DefaultAlbumArt.png</x:String>
-            </x:Arguments>
-        </vm:AlbumArtSelectionWindowViewModel>
     </Design.DataContext>
     
     <Grid RowDefinitions="Auto" ColumnDefinitions="5*, 2*" Height="{Binding $parent[Window].Bounds.Height}">
@@ -148,21 +144,30 @@
                 <Border DockPanel.Dock="Top" Width="200" Height="200" Margin="10 20"
                         BorderBrush="Transparent" BorderThickness="1"
                         BoxShadow="inset 2 2 2 0 Black">
-                    <Canvas Name="CanvasSelectedImage" Width="200" Height="200">
-                        <Image Source="{Binding SelectedAlbumArt}"
-                               Width="200" Height="200" HorizontalAlignment="Center" />
-                        <Border Name="CropSelector" 
-                                Width="{Binding CropSide}" 
-                                Height="{Binding CropSide}"
-                                Canvas.Top = "{Binding CropY, Mode=TwoWay}" 
-                                Canvas.Left="{Binding CropX, Mode=TwoWay}"
-                                BorderBrush="DarkGray" BorderThickness="2" Background="#40FFFFFF" Cursor="SizeAll" ZIndex="1">
+                  <Canvas Name="CanvasSelectedImage" Width="200" Height="200">
+                      <Image Source="{Binding SelectedAlbumArt}"
+                              Width="200" Height="200" HorizontalAlignment="Center" />
+                      <Border Name="CropSelector"
+                              IsVisible="{Binding IsEditMode}"
+                              Width="{Binding CropSide, Mode=TwoWay}" 
+                              Height="{Binding CropSide, Mode=TwoWay}"
+                              Canvas.Top = "{Binding CropY, Mode=TwoWay}" 
+                              Canvas.Left="{Binding CropX, Mode=TwoWay}"
+                              BorderBrush="DarkGray" BorderThickness="2" Background="#40FFFFFF" Cursor="Hand" ZIndex="1">
+                          <i:Interaction.Behaviors>
+                                <lb:ClampedCanvasDragBehavior /> 
+                          </i:Interaction.Behaviors>
+                        <Canvas>
+                          <Rectangle Width="10" Height="10"
+                                      Fill="White" Stroke="Black" StrokeThickness="1"
+                                      Canvas.Right="0" Canvas.Bottom="0" Cursor="BottomRightCorner">
                             <i:Interaction.Behaviors>
-                                <!-- <lb:ClampedCanvasDragBehavior XLimit="200" YLimit="200" /> -->
-                                <id:CanvasDragBehavior />
+                              <lb:CropResizeBehaviour />
                             </i:Interaction.Behaviors>
-                        </Border>
-                    </Canvas>
+                          </Rectangle>
+                        </Canvas>
+                      </Border>
+                  </Canvas>
                 </Border>
                 <Border DockPanel.Dock="Bottom" BorderBrush="DarkGray" BorderThickness="0 1 0 0"
                         HorizontalAlignment="Stretch" Padding="10">
@@ -175,20 +180,30 @@
                         </Button>
                     </StackPanel>
                 </Border>
-                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="5">
-                    <Button Background="DarkGray">
-                        <StackPanel>
-                            <PathIcon Data="{StaticResource arrow_rotate_counterclockwise_regular}"/>
-                            <TextBlock Text="Reset" />
-                        </StackPanel>
-                    </Button>
-                    <Button>
-                        <StackPanel>
-                            <PathIcon Data="{StaticResource crop_regular}" IsVisible="{Binding !IsEditMode}"/>
-                            <PathIcon Data="{StaticResource dismiss_regular}" IsVisible="{Binding IsEditMode}"/>
-                            <TextBlock Text="Crop" />
-                        </StackPanel>
-                    </Button>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Orientation="Horizontal" Spacing="5">
+                  <Button Background="DarkGray"
+                          IsEnabled="{Binding AlbumArtPreChops.Count}"
+                          Command="{Binding UndoCropCommand}">
+                      <StackPanel>
+                          <PathIcon Data="{StaticResource arrow_rotate_counterclockwise_regular}"/>
+                          <TextBlock Text="Undo" />
+                      </StackPanel>
+                  </Button>
+                  <Button Command="{Binding ToggleEditModeCommand}">
+                      <StackPanel>
+                          <PathIcon Data="{StaticResource crop_regular}" IsVisible="{Binding !IsEditMode}"/>
+                          <PathIcon Data="{StaticResource dismiss_regular}" IsVisible="{Binding IsEditMode}"/>
+                          <TextBlock Text="Crop" IsVisible="{Binding !IsEditMode}"/>
+                          <TextBlock Text="Cancel" IsVisible="{Binding IsEditMode}"/>
+                      </StackPanel>
+                  </Button>
+                  <Button Background="DarkGray" IsVisible="{Binding IsEditMode}"
+                          Command="{Binding SaveCropCommand}">
+                    <StackPanel>
+                      <PathIcon Data="{StaticResource checkmark_regular}" Foreground="Cyan"/>
+                      <TextBlock Text="Confirm" />
+                    </StackPanel>
+                  </Button>
                 </StackPanel>
             </DockPanel>
         </StackPanel>

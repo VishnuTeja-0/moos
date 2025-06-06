@@ -3,10 +3,10 @@ using System;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using TagLib;
+using moos.Interfaces;
 
 
 namespace moos.Models
@@ -54,20 +54,21 @@ namespace moos.Models
             return LocalLibraryCollection;
         }
 
-        public async void EditTrackMetadata(Track updatedTrack, string folderPath)
+        public async void EditTrackMetadata(Track updatedTrack, string folderPath, IImageEditor imageEditor)
         {
             string filePath = updatedTrack.FilePath;
 
             var tfile = TagLib.File.Create(filePath);
             if (updatedTrack.AlbumArt is not null)
             {
-                var memoryStream = new MemoryStream();
-                updatedTrack.AlbumArt.Save(memoryStream);
+                var jpegEncoded = imageEditor.EncodeToJpeg(updatedTrack.AlbumArt);
+                using var memoryStream = new MemoryStream(jpegEncoded);
+                memoryStream.Seek(0, SeekOrigin.Begin);
                 var picture = new Picture
                 {
                     Type = PictureType.FrontCover,
                     Description = "Cover",
-                    MimeType = System.Net.Mime.MediaTypeNames.Image.Png,
+                    MimeType = System.Net.Mime.MediaTypeNames.Image.Jpeg,
                     Data = ByteVector.FromStream(memoryStream)
                 };
                 tfile.Tag.Pictures = [picture];

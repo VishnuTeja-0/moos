@@ -9,20 +9,30 @@ namespace moos.Services;
 public class ImageEditorService : IImageEditor
 {
     private static PixelSize _saveSize = new PixelSize(300, 300);
+    private static PixelSize _frameSize = new PixelSize(200, 200);
     private static Vector _saveDpi = new Vector(96, 96);
     private static int _jpegQuality = 85;
     
-    public Bitmap ResizeSelectedImage(Bitmap source)
+    public Bitmap ResizeSelectedImage(Bitmap source, int? width, int? height)
     {
-        using var target = new RenderTargetBitmap(_saveSize, _saveDpi);
-        using (var ctx = target.CreateDrawingContext(false))
-        {
-            ctx.DrawImage(
-                source, 
-                new Rect(0, 0, source.PixelSize.Width, source.PixelSize.Height),
-                new Rect(0, 0, _saveSize.Width, _saveSize.Height));
-        }
-        return target;
+        var targetWidth = width ?? _saveSize.Width;
+        var targetHeight = height ?? _saveSize.Height;
+        var targetSize = new PixelSize(targetWidth, targetHeight);
+        var writeableBitmap = new WriteableBitmap(targetSize, _saveDpi);
+        using var fb = writeableBitmap.Lock();
+        using var skSurface = SKSurface.Create(
+            new SKImageInfo(targetSize.Width, targetSize.Height, SKColorType.Bgra8888, SKAlphaType.Premul),
+            fb.Address,
+            fb.RowBytes
+        );
+        using var skBitmap = ConvertBitmapToSkBitmap(source);
+
+        var destRect = new SKRect(0, 0, targetSize.Width, targetSize.Height);
+        skSurface.Canvas.Clear(SKColors.Transparent);
+        skSurface.Canvas.DrawBitmap(skBitmap, destRect);
+        skSurface.Canvas.Flush();
+
+        return writeableBitmap;
     }
 
     public byte[] EncodeToJpeg(Bitmap bitmap)
@@ -33,19 +43,28 @@ public class ImageEditorService : IImageEditor
         return encoded.ToArray();
     }
 
-    public Bitmap CropBitmap(Bitmap bitmap, PixelRect cropArea)
+    public Bitmap CropBitmap(Bitmap bitmap, int x, int y, int side)
     {
-        using var skBitmap = ConvertBitmapToSkBitmap(bitmap);
-        var cropped = new SKBitmap(cropArea.Width, cropArea.Height);
-        using (var canvas = new SKCanvas(cropped))
+        var resized = ResizeSelectedImage(bitmap, _frameSize.Width, _frameSize.Height);
+        using var skBitmap = ConvertBitmapToSkBitmap(resized);
+        var srcRect = new SKRectI(x, y, x + side, y + side);
+        var cropped = new SKBitmap(side, side, skBitmap.ColorType, skBitmap.AlphaType);
+        if (skBitmap.ExtractSubset(cropped, srcRect))
         {
-            var srcRect = new SKRectI(cropArea.X, cropArea.Y, cropArea.X + cropArea.Width, cropArea.Y + cropArea.Height);
-            var destRect = new SKRectI(0, 0, cropArea.Width, cropArea.Height);
-            canvas.DrawBitmap(skBitmap, srcRect, destRect);
+
+            using var image = SKImage.FromBitmap(cropped);
+            using var data = image.Encode(SKEncodedImageFormat.Png, 100);
+            var memoryStream = new MemoryStream();
+            data.AsStream().CopyTo(memoryStream);
+            memoryStream.Position = 0;
+            var result = new Bitmap(memoryStream);
+
+            return result;
         }
-        using var image = SKImage.FromBitmap(cropped);
-        using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-        return new Bitmap(data.AsStream());
+        else
+        {
+            return bitmap;
+        }
     }
 
     private SKBitmap ConvertBitmapToSkBitmap(Bitmap bitmap)

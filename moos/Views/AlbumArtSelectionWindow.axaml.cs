@@ -32,16 +32,12 @@ public partial class AlbumArtSelectionWindow : ReactiveWindow<AlbumArtSelectionW
         return _taskCompletionSource.Task;
     }
     
-    private void OnSaveButtonClick(object? sender, RoutedEventArgs e)
+    private async void OnSaveButtonClick(object? sender, RoutedEventArgs e)
     {
         var vm = (AlbumArtSelectionWindowViewModel)DataContext!;
+        await Task.Run(() => { vm.SaveAlbumArtCommand.Execute(null); });
+        Debug.WriteLine(vm.SelectedAlbumArt);
         _taskCompletionSource.TrySetResult(vm.SelectedAlbumArt);
         this.Close();
-    }
-    
-    public void TestPointerReleased(object? sender, PointerReleasedEventArgs e)
-    {
-        var vm = (AlbumArtSelectionWindowViewModel)DataContext!;
-        Debug.WriteLine(vm.CropX + " " + vm.CropY);
     }
 }

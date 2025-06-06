@@ -10,7 +10,7 @@
   <Grid ShowGridLines="True" Margin="5" ColumnDefinitions="1*, 3*, 1*" RowDefinitions="Auto, Auto">
     <Label Grid.Row="0" Grid.Column="0" Margin="10"
             TextElement.FontSize="12">
-      Enters YouTube URL
+      Enter YouTube URL
     </Label>
     <TextBox Name="TxtUrl" Text="{Binding YtUrl}" 
              Watermark="Search or enter link (https://youtube.com/watch...)"

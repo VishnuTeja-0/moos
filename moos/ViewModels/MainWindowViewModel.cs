@@ -12,6 +12,7 @@ using Avalonia.Controls;
 using moos.Interfaces;
 using Avalonia.Media.Imaging;
 using moos.Views;
+using System.Diagnostics;
 
 
 namespace moos.ViewModels;
@@ -53,7 +54,7 @@ public partial class MainWindowViewModel : ViewModelBase
         catch(Exception ex)
         {
             //Logging and Error Display - Critical
-            Console.WriteLine(ex.Message);
+            Debug.WriteLine(ex.Message);
         }
         IsLibraryLoading = false;
     }
@@ -105,18 +106,23 @@ public partial class MainWindowViewModel : ViewModelBase
         catch(Exception ex)
         {
             //Logging and Error Display
-            Console.WriteLine(ex.Message);
+            Debug.WriteLine(ex.Message);
         }
 
         if (!isDownloadSuccess)
         {
             // Logging and Error Display
-            Console.WriteLine("There was an error in downloading audio from youtube: {0}", downloadResult);
+            Debug.WriteLine("There was an error in downloading audio from youtube: {0}", downloadResult);
         }
+        else
+        {
+            YtUrl = null;
+        }
+
         if (!isMetadataSuccess)
         {
             // Logging
-            Console.WriteLine("There was an error in fetching youtube metadata: {0}", downloadResult);
+            Debug.WriteLine("There was an error in fetching youtube metadata: {0}", downloadResult);
         }
 
         IsLibraryLoading = false;
@@ -151,6 +157,7 @@ public partial class MainWindowViewModel : ViewModelBase
     #endregion
     
     #region Metadata Commands 
+    private IImageEditor _ImageEditor = new ImageEditorService();
     private Track? _DialogTrack;
     public Track? DialogTrack
     {
@@ -161,7 +168,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public ICommand OpenMetadataDialogCommand { get; }
     public ICommand ResetMetadataDialogCommand { get; }
 
-    private bool _IsMetadataDialogOpen = true;
+    private bool _IsMetadataDialogOpen = false;
     public bool IsMetadataDialogOpen
     {
         get => _IsMetadataDialogOpen;
@@ -182,18 +189,21 @@ public partial class MainWindowViewModel : ViewModelBase
         var albumArtWindow = new AlbumArtSelectionWindow
         {
             DataContext = new AlbumArtSelectionWindowViewModel(
+                _ImageEditor,
                 DialogTrack?.Title ?? "", 
                 DialogTrack?.DisplayArtists ?? "", 
                 DialogTrack?.Album ?? "",
-                ""),
+                DialogTrack?.AlbumArt),
             WindowStartupLocation = WindowStartupLocation.CenterOwner
         };
         
         var selectedBitmap = await albumArtWindow.ShowDialogWithResult(mainWindow);
         if (selectedBitmap is not null)
         {
+            IsMetadataDialogOpen = false;
             DialogTrack!.AlbumArt = selectedBitmap;
             IsMetadataOptionEnabled = true;
+            IsMetadataDialogOpen = true;
         }
     }
 
@@ -201,12 +211,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private async void SubmitMetadataChanges()
     {
-        // Add syncing
         if (!IsDialogYearWarningVisible)
         {
             try
             {
-                await Task.Run(() => { LocalLibrary.EditTrackMetadata(DialogTrack!, Constants.LibraryFolder); });
+                await Task.Run(() => { LocalLibrary.EditTrackMetadata(DialogTrack!, Constants.LibraryFolder, _ImageEditor); });
                 await Task.Run(() => { LoadLibrary(); });
                 SelectedTrack = DialogTrack;
                 IsMetadataDialogOpen = false;
@@ -214,7 +223,7 @@ public partial class MainWindowViewModel : ViewModelBase
             catch (Exception ex)
             {
                 //Logging and Error Display
-                Console.WriteLine(ex.Message);
+                Debug.WriteLine(ex.Message);
             }
         }
     }
@@ -485,7 +494,7 @@ public partial class MainWindowViewModel : ViewModelBase
         OpenMetadataDialogCommand = ReactiveCommand.Create(() =>
         {
             DialogTrack = (Track) SelectedTrack!.Clone();
-            if (DialogTrack.AlbumArt is null)
+            if (SelectedTrack.AlbumArt is null)
             {
                 DialogTrack.SetAlbumArt(Constants.DefaultAlbumArtPath);
             }
@@ -496,7 +505,7 @@ public partial class MainWindowViewModel : ViewModelBase
         ResetMetadataDialogCommand = ReactiveCommand.Create(() =>
         {
             DialogTrack = (Track) SelectedTrack!.Clone();
-            if (DialogTrack.AlbumArt is null)
+            if (SelectedTrack.AlbumArt is null)
             {
                 DialogTrack.SetAlbumArt(Constants.DefaultAlbumArtPath);
             }

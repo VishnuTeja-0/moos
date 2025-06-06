@@ -1,23 +1,19 @@
 using System;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Xaml.Interactions.Draggable;
 using Avalonia.Xaml.Interactivity;
 
 namespace moos.Behaviors;
 
 public class ClampedCanvasDragBehavior : StyledElementBehavior<Control>
 {
-    private Point _start;
-    private Point _startOffset;
+    private Avalonia.Point _start;
+    private Avalonia.Point _startOffset;
     private bool _dragging;
     private Control? _parent;
     private Control? _draggedContainer;
     private bool _captured;
-    public double XLimit {get; set;}
-    public double YLimit {get; set;}
     
     protected override void OnAttachedToVisualTree()
     {
@@ -37,36 +33,46 @@ public class ClampedCanvasDragBehavior : StyledElementBehavior<Control>
     
     private void Pressed(object? sender, PointerPressedEventArgs e)
     {
+        if (e.Source is Avalonia.Controls.Shapes.Rectangle) return;
         var properties = e.GetCurrentPoint(AssociatedObject).Properties;
         if (properties.IsLeftButtonPressed && AssociatedObject is Control { Parent: Canvas canvas } control)
         {
             _dragging = true;
             _start = e.GetPosition(canvas);
-            _parent = _parent;
+            _parent = canvas;
             _draggedContainer = AssociatedObject;
-            _startOffset = new Point(Canvas.GetLeft(control), Canvas.GetTop(control));
+            _startOffset = new Avalonia.Point(Canvas.GetLeft(control), Canvas.GetTop(control));
             SetDraggingPseudoClasses(_draggedContainer, true);
+            _captured = true;
         }
     }
 
     private void Moved(object? sender, PointerEventArgs e)
     {
-        if (_dragging && AssociatedObject is Control control && control.Parent is Canvas canvas)
+        if (e.Source is Avalonia.Controls.Shapes.Rectangle) return;
+        var properties = e.GetCurrentPoint(AssociatedObject).Properties;
+        if (_captured && properties.IsLeftButtonPressed && AssociatedObject is Control { Parent: Canvas canvas } control)
         {
+            if(_parent is null || _draggedContainer is null || !_dragging)
+            {
+                return;
+            }
+
             var pos = e.GetPosition(canvas);
             double dx = pos.X - _start.X;
             double dy = pos.Y - _start.Y;
 
-            double newX = Math.Clamp(_startOffset.X + dx, 0, XLimit - control.Bounds.Width);
-            double newY = Math.Clamp(_startOffset.Y + dy, 0, YLimit - control.Bounds.Height);
+            double newX = Math.Clamp(_startOffset.X + dx, 0, canvas.Width - control.Bounds.Width);
+            double newY = Math.Clamp(_startOffset.Y + dy, 0, canvas.Height - control.Bounds.Height);
 
             Canvas.SetLeft(control, newX);
             Canvas.SetTop(control, newY);
         }
     }
 
-    private void Released()
+    private void Released(object? sender, PointerReleasedEventArgs e)
     {
+        if (e.Source is Avalonia.Controls.Shapes.Rectangle) return;
         if (_captured)
         {
             if (e.InitialPressMouseButton == MouseButton.Left)
@@ -81,6 +87,20 @@ public class ClampedCanvasDragBehavior : StyledElementBehavior<Control>
     {
         Released();
         _captured = false;
+    }
+
+    private void Released()
+    {
+        if (_dragging)
+        {
+            if(_draggedContainer is not null)
+            {
+                SetDraggingPseudoClasses(_draggedContainer, false);
+            }
+            _dragging = false;
+            _parent = null;
+            _draggedContainer = null;
+        }
     }
     
     private void SetDraggingPseudoClasses(Control control, bool isDragging)
