@@ -1,7 +1,10 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using moos.Models;
 using moos.ViewModels;
+using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace moos.Views.MainWindowControls;
 
@@ -11,12 +14,17 @@ public partial class Library : UserControl
     {
         InitializeComponent();
     }
-    
-    public void SetTrackSelection(object source, TappedEventArgs args)
+
+    public void SetTrackSelection(object source, SelectionChangedEventArgs args)
     {
         var localLibraryGrid = (DataGrid)source;
         if (localLibraryGrid is not null && localLibraryGrid.SelectedItems.Count > 0)
         {
+            var vm = (MainWindowViewModel)DataContext!;
+            vm.SelectedTracks = new System.Collections.ObjectModel.ObservableCollection<Track>(
+                localLibraryGrid.SelectedItems
+                .Cast<object>()
+                .OfType<Track>());
         }
     }
 

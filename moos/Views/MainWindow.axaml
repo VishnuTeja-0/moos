@@ -58,16 +58,16 @@
             </StackPanel.Styles>
             <windowViews:Downloader />
             
-            <Grid ShowGridLines="True" Margin="10 15, 0, 0"
+            <Grid ShowGridLines="True" Margin="10,15,10,0"
                 ColumnDefinitions="4*, 0.5*, 2*" RowDefinitions="Auto">
               <StackPanel Name="SectionLibrary" Grid.Row="0" Grid.Column="0">
                 <windowViews:Library Name="ViewLibrary"/>
               </StackPanel>
               
               <!-- Playlist -->
-              <StackPanel Name="SectionPlaylist" Grid.Row="0" Grid.Column="2">
+              <Panel Name="SectionPlaylist" Grid.Row="0" Grid.Column="2">
                 <windowViews:Playlist Name="ViewPlaylist" />
-              </StackPanel>
+              </Panel>
             </Grid>
           </StackPanel>
           

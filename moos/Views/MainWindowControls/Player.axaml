@@ -289,7 +289,11 @@
               </StackPanel>
             </Panel>
           </ToggleButton>
-          <Button Background="SeaGreen" VerticalAlignment="Center" Padding="6">
+          <Button Background="SeaGreen" VerticalAlignment="Center" Padding="6"
+                  Command="{Binding AddToPlaylistCommand}">
+            <Button.CommandParameter>
+              <system:Boolean>True</system:Boolean>
+            </Button.CommandParameter>
             <Button.Styles>
               <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
                 <Setter Property="Background" Value="MediumSeaGreen" />

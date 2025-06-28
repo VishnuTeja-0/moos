@@ -7,6 +7,7 @@ namespace moos
     public static class Constants
     {
         public static readonly string LibraryFolder;
+        public static readonly string PlaylistFolder;
         public static readonly string DefaultAlbumArtPath;
         public static readonly string ProjectDirectory;
         public static readonly string SoundTouchDllPath;
@@ -22,6 +23,7 @@ namespace moos
         static Constants()
         {
             LibraryFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyMusic), ConfigurationManager.AppSettings["libraryFolder"] ?? "moos");
+            PlaylistFolder = Path.Combine(LibraryFolder, ConfigurationManager.AppSettings["playlistFolder"] ?? "playlists");
             DefaultAlbumArtPath = ConfigurationManager.AppSettings["defaultAlbumArtPath"] ?? "";
             ProjectDirectory = Directory.GetParent(Environment.CurrentDirectory)?.Parent?.Parent?.FullName ?? "";
             SoundTouchDllPath = Path.Combine(ProjectDirectory, ConfigurationManager.AppSettings["dllFolder"] ?? "lib");

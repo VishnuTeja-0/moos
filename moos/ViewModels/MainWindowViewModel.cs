@@ -13,20 +13,21 @@ using moos.Interfaces;
 using Avalonia.Media.Imaging;
 using moos.Views;
 using System.Diagnostics;
+using moos.Views.MainWindowControls;
 
 
 namespace moos.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
-    
-    
+
+
     #region Library Commands
-    private Library _LocalLibrary = new();
-    public Library LocalLibrary
-    {   
+    private Models.Library _LocalLibrary = new();
+    public Models.Library LocalLibrary
+    {
         get => _LocalLibrary;
-        set => this.RaiseAndSetIfChanged(ref _LocalLibrary, value);            
+        set => this.RaiseAndSetIfChanged(ref _LocalLibrary, value);
     }
 
     private ObservableCollection<Track> _libraryDataGridSource;
@@ -35,14 +36,14 @@ public partial class MainWindowViewModel : ViewModelBase
         get => _libraryDataGridSource;
         set => this.RaiseAndSetIfChanged(ref _libraryDataGridSource, value);
     }
-    
+
     private bool? _IsLibraryLoading = false;
     public bool? IsLibraryLoading
     {
         get => _IsLibraryLoading;
         set => this.RaiseAndSetIfChanged(ref _IsLibraryLoading, value);
     }
-    
+
     public ICommand ReloadLibrary { get; }
     private void LoadLibrary()
     {
@@ -51,7 +52,7 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             LibraryDataGridSource = LocalLibrary.LoadLocalCollection(Constants.LibraryFolder);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             //Logging and Error Display - Critical
             Debug.WriteLine(ex.Message);
@@ -103,7 +104,7 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             //Logging and Error Display
             Debug.WriteLine(ex.Message);
@@ -129,7 +130,7 @@ public partial class MainWindowViewModel : ViewModelBase
         DownloadProgress = 0;
         return isDownloadSuccess;
     }
-    
+
     private void StartDownloadPolling()
     {
         _downloadTimerSubscription = Observable
@@ -148,16 +149,31 @@ public partial class MainWindowViewModel : ViewModelBase
             });
     }
 
-    private Track? _SelectedTrack;
-    public Track? SelectedTrack
+    private ObservableCollection<Track>? _SelectedTracks;
+    public ObservableCollection<Track>? SelectedTracks
     {
-        get => _SelectedTrack;
-        set => this.RaiseAndSetIfChanged(ref _SelectedTrack, value);
+        get => _SelectedTracks;
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _SelectedTracks, value);
+            this.RaisePropertyChanged(nameof(IsMetadataEditEnabled));
+        }
     }
     #endregion
-    
+
     #region Metadata Commands 
     private IImageEditor _ImageEditor = new ImageEditorService();
+
+    public bool IsMetadataEditEnabled
+    {
+        get
+        {
+            return SelectedTracks is not null &&
+                    SelectedTracks.Count == 1 &&
+                    SelectedTracks[0].FilePath != PlayingTrack?.FilePath;
+        }
+    }
+
     private Track? _DialogTrack;
     public Track? DialogTrack
     {
@@ -181,7 +197,7 @@ public partial class MainWindowViewModel : ViewModelBase
         get => _NewArtist;
         set => this.RaiseAndSetIfChanged(ref _NewArtist, value);
     }
-    
+
     public ICommand OpenAlbumArtWindowCommand { get; }
 
     private async void OpenAlbumArtWindow(Window mainWindow)
@@ -190,13 +206,13 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             DataContext = new AlbumArtSelectionWindowViewModel(
                 _ImageEditor,
-                DialogTrack?.Title ?? "", 
-                DialogTrack?.DisplayArtists ?? "", 
+                DialogTrack?.Title ?? "",
+                DialogTrack?.DisplayArtists ?? "",
                 DialogTrack?.Album ?? "",
                 DialogTrack?.AlbumArt),
             WindowStartupLocation = WindowStartupLocation.CenterOwner
         };
-        
+
         var selectedBitmap = await albumArtWindow.ShowDialogWithResult(mainWindow);
         if (selectedBitmap is not null)
         {
@@ -217,7 +233,8 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 await Task.Run(() => { LocalLibrary.EditTrackMetadata(DialogTrack!, Constants.LibraryFolder, _ImageEditor); });
                 await Task.Run(() => { LoadLibrary(); });
-                SelectedTrack = DialogTrack;
+                SelectedTracks = [];
+                SelectedTracks.Add(DialogTrack);
                 IsMetadataDialogOpen = false;
             }
             catch (Exception ex)
@@ -246,11 +263,12 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     public ICommand SetMetadataFormActionsCommand { get; }
+    public ICommand AddToPlaylistCommand { get; }
     #endregion
 
     #region Player Commands
     private IAudioPlayer _Player;
-    
+
     private Track? _PlayingTrack;
     public Track? PlayingTrack
     {
@@ -272,40 +290,49 @@ public partial class MainWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _IsPlaying, value);
     }
 
-    private Playlist? _Playlist;
-    public Playlist? Playlist
+    private Models.Playlist? _Playlist;
+    public Models.Playlist? Playlist
     {
         get => _Playlist;
         set => this.RaiseAndSetIfChanged(ref _Playlist, value);
     }
 
-    private ObservableCollection<Track> _CurrentPlaylist = [];
-    public ObservableCollection<Track> CurrentPlaylist
+    private ObservableCollection<PlaylistItem> _CurrentTrackList = [];
+    public ObservableCollection<PlaylistItem> CurrentTrackList
     {
-        get => _CurrentPlaylist;
-        set => this.RaiseAndSetIfChanged(ref _CurrentPlaylist, value);
+        get => _CurrentTrackList;
+        set => this.RaiseAndSetIfChanged(ref _CurrentTrackList, value);
     }
 
-    public ICommand PlaySingleTrackCommand {  get; }
-    
+    public ICommand PlaySingleTrackCommand { get; }
+
     private IDisposable? _playbackTimerSubscription;
 
-    private void SetAndPlayTrack(Track track)
+    private void SetAndPlayTrack(Track track, float? speed, float? pitch)
     {
         ResetPlayback();
         InitializeTrack(track);
 
-        if(Playlist is null || CurrentPlaylist is null || CurrentPlaylist.Count == 1)
+        if (speed is null)
         {
-            Playlist = new Playlist();
-            CurrentPlaylist = Playlist.AddTrack(track);
+            Playlist = new Models.Playlist();
+            CurrentTrackList = Playlist.AddTrack(track, Constants.DefaultPlayingSpeed, Constants.DefaultPlayingPitch);
+        }
+
+        if (speed is not null)
+        {
+            PlayingTrackSpeed = speed.Value;
+        }
+        if (pitch is not null)
+        {
+            PlayingTrackPitch = pitch.Value;
         }
 
         _Player = AudioPlayerFactory.CreatePlayer();
         _Player.PlayTrack(track.FilePath);
         _Player!.SetVolume(PlayerVolume);
         IsPlaying = true;
-
+        
         StartPlaybackTimer();
     }
 
@@ -324,7 +351,11 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void InitializeTrack(Track track)
     {
+        // UI animation workaround
+        if (PlayingTrack is not null && track.FilePath == PlayingTrack.FilePath) Task.Run(() => LoadLibrary());
+
         PlayingTrack = (Track)track!.Clone();
+        this.RaisePropertyChanged(nameof(IsMetadataEditEnabled));
         if (PlayingTrack.AlbumArt is null)
         {
             PlayingTrack.SetAlbumArt(Constants.DefaultAlbumArtPath);
@@ -349,27 +380,26 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
             });
     }
-    
-    public ICommand PlayNextCommand { get; }
 
+    public ICommand PlayNextCommand { get; }
     private void PlayNextTrack()
     {
         if (Playlist is null)
-        {            
-            return;
-        }
-
-        Track? track = Playlist.ReturnTrack();
-        if (track is null)
         {
             return;
         }
 
-        SetAndPlayTrack(track);
+        PlaylistItem? trackItem = Playlist.ReturnTrack();
+        if (trackItem is null)
+        {
+            PlayingTrackPosition += 5;
+            return;
+        }
+
+        SetAndPlayTrack(trackItem.Track, trackItem.Speed, trackItem.Pitch);
     }
 
     public ICommand PlayPreviousCommand { get; }
-
     private void PlayPreviousTrack()
     {
         if (Playlist is null || PlayingTrackPosition > 5)
@@ -378,18 +408,17 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        Track? track = Playlist.ReturnTrack(-1);
-        if (track is null)
+        PlaylistItem? trackItem = Playlist.ReturnTrack(-1);
+        if (trackItem is null)
         {
             PlayingTrackPosition = 0;
             return;
         }
 
-        SetAndPlayTrack(track);
+        SetAndPlayTrack(trackItem.Track, trackItem.Speed, trackItem.Pitch);
     }
 
     public ICommand PlayPauseActiveTrackCommand { get; }
-    
     private void PlayPauseActiveTrack(bool IsMuted)
     {
         if (!IsMuted)
@@ -452,7 +481,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         get { return PlayingTrackSpeed.ToString() + "%"; }
     }
-    
+
     private float _PlayingTrackPitch = Constants.DefaultPlayingPitch;
     public float PlayingTrackPitch
     {
@@ -465,13 +494,74 @@ public partial class MainWindowViewModel : ViewModelBase
     }
     public string DisplayPlayingPitch
     {
-        get {return PlayingTrackPitch.ToString("0.0");}
+        get { return PlayingTrackPitch.ToString("0.0"); }
+    }
+    #endregion
+    #region Playlist Commands
+    private PlaylistService _playlistService = new();
+
+    private void AddTracksToPlaylist(bool isPlayingTrack)
+    {
+        if (Playlist is null)
+        {
+            Playlist = new Models.Playlist();
+        }
+
+        if (isPlayingTrack)
+        {
+            CurrentTrackList = Playlist.AddTrack(PlayingTrack, PlayingTrackSpeed, PlayingTrackPitch);
+        }
+        else
+        {
+            CurrentTrackList = Playlist.AddTracks(SelectedTracks);
+        }
+    }
+
+    private ObservableCollection<int>? _SelectedPlaylistIndexes;
+    public ObservableCollection<int>? SelectedPlaylistIndexes
+    {
+        get => _SelectedPlaylistIndexes;
+        set => this.RaiseAndSetIfChanged(ref _SelectedPlaylistIndexes, value);
+    }
+
+    private ObservableCollection<SavedPlaylist> _SavedPlaylistNames;
+    public ObservableCollection<SavedPlaylist> SavedPlaylistNames
+    {
+        get => _SavedPlaylistNames;
+        set => this.RaiseAndSetIfChanged(ref _SavedPlaylistNames, value);
+    }
+
+    private void LoadSavedPlaylists()
+    {
+        SavedPlaylistNames = _playlistService.GetPlaylistsWithPaths();
+    }
+
+    private SavedPlaylist? _SelectedSavedPlayist;
+    public SavedPlaylist? SelectedSavedPlayist
+    {
+        get => _SelectedSavedPlayist;
+        set => this.RaiseAndSetIfChanged(ref _SelectedSavedPlayist, value);
+    }
+
+    public ICommand SavePlaylistCommand { get; }
+    private async void SavePlaylist()
+    {
+        if(Playlist is not null || CurrentTrackList.Count == 0)
+        {
+            // Pop up
+            return;
+        }
+        if(SavedPlaylistNames.Any(savedList => savedList.Name == Playlist.Name))
+        {
+            // Pop up confirmation - same file path
+            await Task.Run(() => { _playlistService.SavePlaylist(Playlist!); });
+        }
     }
     #endregion
 
     public MainWindowViewModel()
     {
-        RxApp.MainThreadScheduler.Schedule(LoadLibrary);
+        RxApp.MainThreadScheduler.Schedule(() => { LoadLibrary(); LoadSavedPlaylists(); });
         
         ReloadLibrary = ReactiveCommand.Create(() =>
         {
@@ -491,10 +581,16 @@ public partial class MainWindowViewModel : ViewModelBase
            } 
         });
 
+        AddToPlaylistCommand = ReactiveCommand.Create((bool isPlayingTrack) => 
+        {
+            AddTracksToPlaylist(isPlayingTrack);
+        });
+
         OpenMetadataDialogCommand = ReactiveCommand.Create(() =>
         {
-            DialogTrack = (Track) SelectedTrack!.Clone();
-            if (SelectedTrack.AlbumArt is null)
+            var selectedTrack = SelectedTracks[0];
+            DialogTrack = (Track) selectedTrack!.Clone();
+            if (selectedTrack.AlbumArt is null)
             {
                 DialogTrack.SetAlbumArt(Constants.DefaultAlbumArtPath);
             }
@@ -504,8 +600,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
         ResetMetadataDialogCommand = ReactiveCommand.Create(() =>
         {
-            DialogTrack = (Track) SelectedTrack!.Clone();
-            if (SelectedTrack.AlbumArt is null)
+            var selectedTrack = SelectedTracks[0];
+            DialogTrack = (Track) selectedTrack!.Clone();
+            if (selectedTrack.AlbumArt is null)
             {
                 DialogTrack.SetAlbumArt(Constants.DefaultAlbumArtPath);
             }
@@ -539,12 +636,12 @@ public partial class MainWindowViewModel : ViewModelBase
         RemoveDialogArtistCommand = ReactiveCommand.Create((string selectedArtist) =>
         {
             DialogTrack!.Artists!.Remove(selectedArtist);
-            IsMetadataOptionEnabled = !(SelectedTrack!.Equals(DialogTrack!));
+            IsMetadataOptionEnabled = !(SelectedTracks[0]!.Equals(DialogTrack!));
         });
 
         SetMetadataFormActionsCommand = ReactiveCommand.Create(() =>
         {
-            IsMetadataOptionEnabled = !(SelectedTrack!.Equals(DialogTrack!));
+            IsMetadataOptionEnabled = !(SelectedTracks[0]!.Equals(DialogTrack!));
 
             if (DialogTrack!.Year != "" && !uint.TryParse(DialogTrack!.Year, out uint _))
             {
@@ -556,9 +653,10 @@ public partial class MainWindowViewModel : ViewModelBase
             }
         });
 
-        PlaySingleTrackCommand = ReactiveCommand.Create( () =>
+        PlaySingleTrackCommand = ReactiveCommand.Create( (Track? selectedTrack) =>
         {
-            SetAndPlayTrack(SelectedTrack!);
+            Track track = selectedTrack ?? SelectedTracks[0];
+            SetAndPlayTrack(track, null, null);
         });
 
         PlayPauseActiveTrackCommand = ReactiveCommand.Create((bool isPlayButtonChecked) =>
@@ -649,6 +747,11 @@ public partial class MainWindowViewModel : ViewModelBase
             .Subscribe(_ =>
             {
                 _Player!.SetSpeed(PlayingTrackSpeed);
+                if(Playlist is not null && PlayingTrack is not null && CurrentTrackList is not null)
+                {
+                    CurrentTrackList = [];
+                    CurrentTrackList = _Playlist!.UpdatePlaylistTrack(PlayingTrack.FilePath, PlayingTrackSpeed, PlayingTrackPitch);
+                }
             });
 
         this.WhenAnyValue(x => x.PlayingTrackPitch)
@@ -657,6 +760,16 @@ public partial class MainWindowViewModel : ViewModelBase
             .Subscribe(_ =>
             {
                 _Player!.SetPitch(PlayingTrackPitch);
+                if (Playlist is not null && PlayingTrack is not null && CurrentTrackList is not null)
+                {
+                    CurrentTrackList = [];
+                    CurrentTrackList = _Playlist!.UpdatePlaylistTrack(PlayingTrack.FilePath, PlayingTrackSpeed, PlayingTrackPitch);
+                }
             });
+
+        SavePlaylistCommand = ReactiveCommand.Create(() =>
+        {
+            SavePlaylist();
+        });
     }
 }

@@ -31,7 +31,7 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
 
         var playlist = this.FindControl<Playlist>("ViewPlaylist");
         var playlistGrid = playlist.FindControl<DataGrid>("GridPlaylist");
-        var playlistSection = this.FindControl<StackPanel>("SectionLibrary");
+        var playlistSection = this.FindControl<Panel>("SectionPlaylist");
         var playlistHeightValue = newHeight * 0.3;
         playlistGrid.Height = playlistHeightValue;
         playlistSection.MinHeight = playlistHeightValue;

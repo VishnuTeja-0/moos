@@ -3,12 +3,17 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:moos.ViewModels"
+             xmlns:conv="clr-namespace:moos.Converters"
              mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="768"
              x:Class="moos.Views.MainWindowControls.Playlist"
              x:DataType="vm:MainWindowViewModel">
+
+  <UserControl.Resources>
+    <conv:PlaylistTracksRowBackgroundConverter x:Key="PlaylistTracksRowBackgroundConverter" />
+  </UserControl.Resources>
   
-  <Border BorderBrush="rgba(36,36,36,1)" BorderThickness="2" CornerRadius="4 4 0 0" BoxShadow="-5 5 15 0 Black">
-    <TabControl>
+  <Border BorderBrush="rgba(36,36,36,1)" BorderThickness="2" CornerRadius="4 4 0 0" BoxShadow="-5 5 15 0 Black" VerticalAlignment="Stretch">
+    <TabControl VerticalAlignment="Stretch">
       <TabControl.Styles>
         <Style Selector="TabControl">
           <Setter Property="Background" Value="rgba(36,36,36,1)" />
@@ -20,7 +25,7 @@
         <Style Selector="TabItem">
           <Setter Property="FontSize" Value="16" />
           <Setter Property="Background" Value="rgba(50,50,50,1)" />
-          <Setter Property="Margin" Value="2,4, 2, 0" />
+          <Setter Property="Margin" Value="2,4,2,0" />
           <Setter Property="CornerRadius" Value="4" />
           <Style Selector="^:selected">
             <Style Selector="^ /template/ Border#PART_SelectedPipe">
@@ -34,40 +39,46 @@
           <Style Selector="^:pointerover:selected /template/ Border#PART_LayoutRoot">
             <Setter Property="Background" Value="DarkCyan" />
           </Style>
+          <Style Selector="^ Button.button-playlist">
+            <Setter Property="Margin" Value="0 5 5 5" />
+            <Setter Property="Padding" Value="2 5" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Style Selector="^ > StackPanel">
+              <Setter Property="HorizontalAlignment" Value="Center" />
+              <Style Selector="^ > PathIcon">
+                <Setter Property="Height" Value="12" />
+              </Style>
+              <Style Selector="^ > TextBlock">
+                <Setter Property="LineHeight" Value="12" />
+              </Style>
+            </Style>
+            <Style Selector="^#ButtonSavePlaylist:pointerover /template/ ContentPresenter">
+              <Setter Property="Background" Value="LightGray" />
+            </Style>
+            <Style Selector="^#ButtonRemoveTrack:pointerover /template/ ContentPresenter">
+              <Setter Property="Background" Value="Salmon" />
+            </Style>
+            <Style Selector="^#ButtonLoadPlaylist:pointerover /template/ ContentPresenter">
+              <Setter Property="Background" Value="Cyan" />
+            </Style>
+            <Style Selector="^#ButtonDeletePlaylist:pointerover /template/ ContentPresenter">
+              <Setter Property="Background" Value="Salmon" />
+            </Style>
+          </Style>
         </Style>
       </TabControl.Styles>
-      <TabItem>
+      <TabItem VerticalAlignment="Stretch">
         <TabItem.Header>
           <TextBlock Text="Now Playing" />
         </TabItem.Header>
-        <StackPanel Classes="tab-content">
-          <TextBlock Text="Add some songs to get started!"
-                     IsVisible="{Binding !CurrentPlaylist.Count}"/>
-          <Grid ColumnDefinitions="1*, 1*, 1*, 1*" RowDefinitions="Auto, Auto, Auto"
-                Margin="10"
-                IsVisible="{Binding CurrentPlaylist.Count}">
+        <Panel Classes="tab-content" VerticalAlignment="Stretch">
+          <TextBlock Text="Add some songs to get started!" 
+                     HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20" FontSize="20"
+                     IsVisible="{Binding !CurrentTrackList.Count}" />
+          <Grid ColumnDefinitions="1*, 1*, 1*, 1*" RowDefinitions="Auto, Auto, Auto" Margin="10"
+                IsVisible="{Binding CurrentTrackList.Count}">
             <Grid.Styles>
-              <Style Selector="Button.button-playlist">
-                <Setter Property="Margin" Value="0 5 5 5" />
-                <Setter Property="Padding" Value="2 5" />
-                <Setter Property="FontSize" Value="12" />
-                <Setter Property="HorizontalAlignment" Value="Stretch" />
-                <Style Selector="^ > StackPanel">
-                  <Setter Property="HorizontalAlignment" Value="Center" />
-                  <Style Selector="^ > PathIcon">
-                    <Setter Property="Height" Value="12" />
-                  </Style>
-                  <Style Selector="^ > TextBlock">
-                    <Setter Property="LineHeight" Value="12" />
-                  </Style>
-                </Style>
-                <Style Selector="^#ButtonSavePlaylist:pointerover /template/ ContentPresenter">
-                  <Setter Property="Background" Value="LightGray" />
-                </Style>
-                <Style Selector="^#ButtonRemoveTrack:pointerover /template/ ContentPresenter">
-                  <Setter Property="Background" Value="Salmon" />
-                </Style>
-              </Style>
               <Style Selector="TextBox#TextPlaylistTitle">
                 <Setter Property="BorderBrush" Value="Black" />
                 <Style Selector="^:pointerover /template/ Border#PART_BorderElement">
@@ -80,7 +91,8 @@
             </Grid.Styles>
             <TextBox Name="TextPlaylistTitle" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 5"
                      Text="{Binding Playlist.Name, Mode=TwoWay}" />
-            <Button Name="ButtonSavePlaylist" Classes="button-playlist" Grid.Row="1" Grid.Column="0" Background="DarkGray">
+            <Button Name="ButtonSavePlaylist" Classes="button-playlist" Grid.Row="1" Grid.Column="0" Background="DarkGray"
+                    Command="{Binding SavePlaylistCommand}">
               <StackPanel Orientation="Horizontal">
                 <PathIcon Data="{StaticResource save_regular}" />
                 <TextBlock Text="Save" />
@@ -92,17 +104,19 @@
                 <TextBlock Text="Remove" />
               </StackPanel>
             </Button>
-            <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4">
-              <DataGrid Name="GridPlaylist"
-                      ItemsSource="{Binding CurrentPlaylist}"
+            <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4">
+              <DataGrid Name="GridPlaylist" ItemsSource="{Binding CurrentTrackList}" 
                       CanUserReorderColumns="False" CanUserSortColumns="False"
-                      SelectionMode="Extended"
+                      SelectionMode="Extended" SelectionChanged="SetPlaylistIndexSelection"
                       GridLinesVisibility="None" IsReadOnly="True"
-                      Background="DarkSlateGray" CornerRadius="4">
+                      Background="DarkGray" CornerRadius="4">
               <DataGrid.Styles>
                 <Style Selector="DataGridRow">
                   <Style Selector="^:hover">
                     <Setter Property="Background" Value="DarkSlateGray" />
+                  </Style>
+                  <Style Selector="^:selected">
+                    <Setter Property="Background" Value="DarkCyan" />
                   </Style>
                   <Setter Property="Margin" Value="0"/>
                   <Setter Property="BorderBrush" Value="rgba(36, 36, 36, 0.4)" />
@@ -128,7 +142,8 @@
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
                       <PathIcon Data="{StaticResource play_regular}" Width="12" Height="12"
-                                Foreground="Green" Background="Transparent" />
+                                Foreground="Green" Background="Transparent"
+                                IsEnabled=""/>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
@@ -136,29 +151,63 @@
                   <DataGridTemplateColumn.CellTemplate>
                     <DataTemplate>
                       <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Title}"/>
-                        <TextBlock Text="{Binding DisplayArtists}" 
+                        <TextBlock Text="{Binding Track.Title}"/>
+                        <TextBlock Text="{Binding Track.DisplayArtists}" 
                                    Foreground="LightGray"/>
                         <StackPanel Orientation="Horizontal">
-                          <TextBlock Classes="saved-config" Text="+0.5" Foreground="LightCyan"/>
-                          <TextBlock Classes="saved-config" Text="90%" Foreground="LightCyan" />
+                          <TextBlock Classes="saved-config" Text="{Binding DisplayPitch}" Foreground="LightCyan"/>
+                          <TextBlock Classes="saved-config" Text="{Binding DisplaySpeed}" Foreground="LightCyan" />
                         </StackPanel>
                       </StackPanel>
                     </DataTemplate>
                   </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="Duration" Width="1*" FontSize="12"
-                                    Binding="{Binding DisplayDuration}" />
+                                    Binding="{Binding Track.DisplayDuration}" />
               </DataGrid.Columns>
             </DataGrid>
             </Border>
           </Grid>
-        </StackPanel>
+        </Panel>
       </TabItem>
-      <TabItem>
+      <TabItem VerticalAlignment="Stretch">
         <TabItem.Header>
           <TextBlock Text="Saved Playlists" />
         </TabItem.Header>
+        <Panel Classes="tab-content" VerticalAlignment="Stretch">
+          <TextBlock Text="No saved playlists found!"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20" FontSize="20"
+                     IsVisible="{Binding !SavedPlaylistNames.Count}" />
+          <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="1*, 1*, 1*, 1*" Margin="10"
+                IsVisible="{Binding SavedPlaylistNames.Count}">
+            <Button Name="ButtonLoadPlaylist" Classes="button-playlist" Grid.Row="0" Grid.Column="0" Background="DarkCyan">
+              <StackPanel Orientation="Horizontal">
+                <PathIcon Data="{StaticResource apps_list_regular}"/>
+                <TextBlock Text="Load" />
+              </StackPanel>
+            </Button>
+            <Button Name="ButtonDeletePlaylist" Classes="button-playlist" Grid.Row="0" Grid.Column="1" Background="IndianRed">
+              <StackPanel Orientation="Horizontal">
+                <PathIcon Data="{StaticResource dismiss_regular}" />
+                <TextBlock Text="Delete" />
+              </StackPanel>
+            </Button>
+            <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4">
+              <ListBox ItemsSource="{Binding SavedPlaylistNames}" SelectionMode="Multiple">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <Border BorderBrush="White" BorderThickness="1" Padding="5">
+                      <StackPanel Spacing="1">
+                        <TextBlock Text="{Binding Name}" FontSize="14"/>
+                        <TextBlock Text="{Binding DisplayModifiedDate}" FontSize="10" />
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
+            </Border>
+          </Grid>
+        </Panel>
       </TabItem>
     </TabControl>
   </Border>

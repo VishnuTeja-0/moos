@@ -3,9 +3,15 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:moos.ViewModels"
+             xmlns:conv="clr-namespace:moos.Converters"
+             xmlns:system="clr-namespace:System;assembly=System.Runtime"
              mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="768"
              x:Class="moos.Views.MainWindowControls.Library"
              x:DataType="vm:MainWindowViewModel">
+
+  <UserControl.Resources>
+    <conv:CheckForPlayingTrackConverter x:Key="CheckForPlayingTrackConverter" />
+  </UserControl.Resources>
   
   <StackPanel Margin="0">
     <!-- Search and Track Options -->
@@ -26,7 +32,7 @@
             <Setter Property="Margin" Value="5 0" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="Padding" Value="5" />
-            <Setter Property="IsEnabled" Value="{Binding SelectedTrack, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <Setter Property="IsEnabled" Value="{Binding SelectedTracks, Converter={x:Static ObjectConverters.IsNotNull}}" />
             <Style Selector="^ PathIcon">
               <Setter Property="Height" Value="14" />
             </Style>
@@ -42,7 +48,7 @@
           </Style>
         </StackPanel.Styles>
         <Button Name="ButtonEditMetadata" Classes="button-library" Background="DodgerBlue"
-                Command="{Binding OpenMetadataDialogCommand}">
+                Command="{Binding OpenMetadataDialogCommand}" IsEnabled="{Binding IsMetadataEditEnabled}">
           <StackPanel Orientation="Horizontal">
             <PathIcon Data="{StaticResource edit_regular}" />
             <TextBlock Text="Edit Metadata" />
@@ -54,7 +60,11 @@
             <TextBlock Text="Delete Track" />
           </StackPanel>
         </Button>
-        <Button Name="ButtonAddPlaying" Classes="button-library" Background="SeaGreen">
+        <Button Name="ButtonAddPlaying" Classes="button-library" Background="SeaGreen"
+                Command="{Binding AddToPlaylistCommand}">
+          <Button.CommandParameter>
+            <system:Boolean>False</system:Boolean>
+          </Button.CommandParameter>
           <StackPanel Orientation="Horizontal">
             <PathIcon Data="{StaticResource add_regular}" />
             <TextBlock Text="Add to Playing" />
@@ -98,9 +108,9 @@
       </Panel>     
       <DataGrid Name="GridLibrary" Margin="0 10" CornerRadius="2"
                 ItemsSource="{Binding LibraryDataGridSource}" 
-                SelectedItem="{Binding SelectedTrack, Mode=TwoWay}"
-                Tapped="SetTrackSelection" DoubleTapped="PlaySingleTrack"
-                GridLinesVisibility="None" IsReadOnly="True" Background="rgba(36, 36, 36, 1)" 
+                SelectionChanged="SetTrackSelection" DoubleTapped="PlaySingleTrack"
+                GridLinesVisibility="None" IsReadOnly="True" Background="rgba(36, 36, 36, 1)"
+                SelectionMode="Extended"
                 IsVisible="{Binding LibraryDataGridSource.Count}">
         <DataGrid.Styles>
           <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
@@ -117,8 +127,111 @@
           <DataGridTemplateColumn Header="" Width="0.5*">
             <DataGridTemplateColumn.CellTemplate>
               <DataTemplate>
-                <PathIcon Data="{StaticResource play_regular}" Width="12" Height="12"
-                          Foreground="Green" Background="Transparent" />
+                <ToggleButton Command="{Binding #GridLibrary((vm:MainWindowViewModel)DataContext).PlaySingleTrackCommand}"
+                              CommandParameter="{Binding }">
+                  <ToggleButton.IsChecked>
+                    <MultiBinding Converter="{StaticResource CheckForPlayingTrackConverter}" Mode="TwoWay">
+                      <Binding Path=""/>
+                      <Binding Path="#GridLibrary((vm:MainWindowViewModel)DataContext).PlayingTrack" />
+                    </MultiBinding>
+                  </ToggleButton.IsChecked>
+                  <ToggleButton.Template>
+                    <ControlTemplate>
+                      <Border x:Name="GlowBackground">
+                        <ContentPresenter x:Name="PART_ContentPresenter" Content="{TemplateBinding Content}" Padding="{TemplateBinding Padding}" />
+                      </Border>
+                    </ControlTemplate>
+                  </ToggleButton.Template>
+                  <ToggleButton.Styles>
+                    <Style Selector="ToggleButton">
+                      <Setter Property="Background" Value="Transparent" />
+                      <Style Selector="^ PathIcon">
+                        <Setter Property="Width" Value="12" />
+                        <Setter Property="Height" Value="12" />
+                        <Setter Property="Foreground" Value="MediumSeaGreen" />
+                      </Style>
+                      <Style Selector="^ PathIcon.play">
+                        <Setter Property="IsVisible" Value="True" />
+                      </Style>
+                      <Style Selector="^ PathIcon.playing">
+                        <Setter Property="IsVisible" Value="False" />
+                      </Style>
+                    </Style>
+                    <Style Selector="ToggleButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+                      <Setter Property="Background">
+                        <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%" Radius="1"
+                                             SpreadMethod="Pad">
+                          <GradientStops>
+                            <GradientStop Color="DarkGreen" Offset="0.0" />
+                            <GradientStop Color="Transparent" Offset="0.3" />
+                          </GradientStops>
+                        </RadialGradientBrush>
+                      </Setter>
+                    </Style>
+                    <Style Selector="ToggleButton:checked">
+                      <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+                        <Setter Property="Background">
+                          <RadialGradientBrush Center="40%,50%" GradientOrigin="40%,50%" 
+                                               Radius="1" SpreadMethod="Pad">
+                            <GradientStops>
+                              <GradientStop Color="DarkGreen" Offset="0.0" />
+                              <GradientStop Color="Transparent" Offset="0.35" />
+                            </GradientStops>
+                          </RadialGradientBrush>
+                        </Setter>
+                      </Style>
+                      <Style Selector="^ Border#GlowBackground">
+                        <Style.Animations>
+                          <Animation Duration="0:0:2" IterationCount="Infinite" PlaybackDirection="Alternate" Easing="LinearEasing">
+                            <KeyFrame Cue="0%">
+                              <Setter Property="Background">
+                                <RadialGradientBrush Center="40%,50%" GradientOrigin="40%,50%"
+                                                     Radius="1" SpreadMethod="Pad">
+                                  <GradientStops>
+                                    <GradientStop Color="DarkGreen" Offset="0.0" />
+                                    <GradientStop Color="Transparent" Offset="0.35" />
+                                  </GradientStops>
+                                </RadialGradientBrush>
+                              </Setter>
+                            </KeyFrame>
+                            <KeyFrame Cue="50%">
+                              <Setter Property="Background">
+                                <RadialGradientBrush Center="50%,50%" GradientOrigin="50%,50%"
+                                                     Radius="1" SpreadMethod="Pad">
+                                  <GradientStops>
+                                    <GradientStop Color="DarkGreen" Offset="0.0" />
+                                    <GradientStop Color="Transparent" Offset="0.45" />
+                                  </GradientStops>
+                                </RadialGradientBrush>
+                              </Setter>
+                            </KeyFrame>
+                            <KeyFrame Cue="100%">
+                              <Setter Property="Background">
+                                <RadialGradientBrush Center="60%,50%" GradientOrigin="60%,50%"
+                                                     Radius="1" SpreadMethod="Pad">
+                                  <GradientStops>
+                                    <GradientStop Color="DarkGreen" Offset="0.0" />
+                                    <GradientStop Color="Transparent" Offset="0.35" />
+                                  </GradientStops>
+                                </RadialGradientBrush>
+                              </Setter>
+                            </KeyFrame>
+                          </Animation>
+                        </Style.Animations>
+                      </Style>
+                      <Style Selector="^ PathIcon.play">
+                        <Setter Property="IsVisible" Value="False" />
+                      </Style>
+                      <Style Selector="^ PathIcon.playing">
+                        <Setter Property="IsVisible" Value="True" />
+                      </Style>
+                    </Style>
+                  </ToggleButton.Styles>
+                  <Panel>
+                    <PathIcon Classes="play" Data="{StaticResource play_regular}" />
+                    <PathIcon Classes="playing" Data="{StaticResource speaker_1_regular}" />
+                  </Panel>
+                </ToggleButton>
               </DataTemplate>
             </DataGridTemplateColumn.CellTemplate>
           </DataGridTemplateColumn>
