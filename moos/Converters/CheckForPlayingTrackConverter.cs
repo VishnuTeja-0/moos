@@ -10,11 +10,12 @@ namespace moos.Converters
     {
         public object Convert(IList<object?> value, Type targetType, object? parameter, CultureInfo culture)
         {
-            if(value is not null && value.Count == 2)
+            if(value is not null && value.Count == 3)
             {
-                Track listTrack = value[0] as Track;
-                Track playingTrack = value[1] as Track;
-                if(listTrack?.FilePath == playingTrack?.FilePath)
+                bool isLibraryCheck = value[2] as bool? ?? true;
+                Track? checkTrack = isLibraryCheck ? value[0] as Track : (value[0] as PlaylistItem)?.Track;
+                Track? playingTrack = value[1] as Track;
+                if (checkTrack?.FilePath == playingTrack?.FilePath)
                 {
                     return true;
                 }

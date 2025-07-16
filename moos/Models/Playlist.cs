@@ -92,5 +92,10 @@ namespace moos.Models
             return CurrentPlaylist;
         }
 
+        public int GetCurrentPlayingId()
+        {
+            PlaylistItem item = CurrentPlaylist!.ElementAt(PlayerPosition);
+            return item.Id;
+        }
     }
 }

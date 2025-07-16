@@ -313,7 +313,7 @@ public partial class MainWindowViewModel : ViewModelBase
         ResetPlayback();
         InitializeTrack(track);
 
-        if (speed is null)
+        if (speed is null && Playlist is null)
         {
             Playlist = new Models.Playlist();
             CurrentTrackList = Playlist.AddTrack(track, Constants.DefaultPlayingSpeed, Constants.DefaultPlayingPitch);
@@ -351,7 +351,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void InitializeTrack(Track track)
     {
-        // UI animation workaround
+        // UI update workaround
         if (PlayingTrack is not null && track.FilePath == PlayingTrack.FilePath) Task.Run(() => LoadLibrary());
 
         PlayingTrack = (Track)track!.Clone();
@@ -395,6 +395,12 @@ public partial class MainWindowViewModel : ViewModelBase
             PlayingTrackPosition += 5;
             return;
         }
+        else
+        {
+            // UI update workaround
+            CurrentTrackList = [];
+            CurrentTrackList = Playlist.CurrentPlaylist;
+        }
 
         SetAndPlayTrack(trackItem.Track, trackItem.Speed, trackItem.Pitch);
     }
@@ -413,6 +419,12 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             PlayingTrackPosition = 0;
             return;
+        }
+        else
+        {
+            // UI update workaround
+            CurrentTrackList = [];
+            CurrentTrackList = Playlist.CurrentPlaylist;
         }
 
         SetAndPlayTrack(trackItem.Track, trackItem.Speed, trackItem.Pitch);
@@ -497,6 +509,7 @@ public partial class MainWindowViewModel : ViewModelBase
         get { return PlayingTrackPitch.ToString("0.0"); }
     }
     #endregion
+
     #region Playlist Commands
     private PlaylistService _playlistService = new();
 
@@ -506,7 +519,6 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             Playlist = new Models.Playlist();
         }
-
         if (isPlayingTrack)
         {
             CurrentTrackList = Playlist.AddTrack(PlayingTrack, PlayingTrackSpeed, PlayingTrackPitch);
@@ -514,6 +526,10 @@ public partial class MainWindowViewModel : ViewModelBase
         else
         {
             CurrentTrackList = Playlist.AddTracks(SelectedTracks);
+            if(PlayingTrack is null)
+            {
+                SetAndPlayTrack(SelectedTracks[0], null, null); 
+            }
         }
     }
 
@@ -584,6 +600,8 @@ public partial class MainWindowViewModel : ViewModelBase
         AddToPlaylistCommand = ReactiveCommand.Create((bool isPlayingTrack) => 
         {
             AddTracksToPlaylist(isPlayingTrack);
+            this.RaisePropertyChanged(nameof(Playlist));
+            this.RaisePropertyChanged(nameof(CurrentTrackList)) ;
         });
 
         OpenMetadataDialogCommand = ReactiveCommand.Create(() =>

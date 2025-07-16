@@ -109,10 +109,14 @@
       <DataGrid Name="GridLibrary" Margin="0 10" CornerRadius="2"
                 ItemsSource="{Binding LibraryDataGridSource}" 
                 SelectionChanged="SetTrackSelection" DoubleTapped="PlaySingleTrack"
-                GridLinesVisibility="None" IsReadOnly="True" Background="rgba(36, 36, 36, 1)"
+                GridLinesVisibility="None" IsReadOnly="True" Background="rgba(20, 20, 20, 1)"
                 SelectionMode="Extended"
                 IsVisible="{Binding LibraryDataGridSource.Count}">
         <DataGrid.Styles>
+          <Style Selector="DataGridColumnHeader">
+            <Setter Property="Background" Value="rgba(20, 20, 20, 1)" />
+            <Setter Property="AreSeparatorsVisible" Value="False" />
+          </Style>
           <Style Selector="DataGridRow:selected /template/ Rectangle#BackgroundRectangle">
             <Setter Property="Fill" Value="DarkCyan" />
           </Style>
@@ -133,6 +137,11 @@
                     <MultiBinding Converter="{StaticResource CheckForPlayingTrackConverter}" Mode="TwoWay">
                       <Binding Path=""/>
                       <Binding Path="#GridLibrary((vm:MainWindowViewModel)DataContext).PlayingTrack" />
+                      <Binding>
+                        <Binding.Source>
+                          <system:Boolean>True</system:Boolean>
+                        </Binding.Source>
+                      </Binding>
                     </MultiBinding>
                   </ToggleButton.IsChecked>
                   <ToggleButton.Template>
