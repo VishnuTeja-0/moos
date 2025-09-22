@@ -14,6 +14,11 @@ using Avalonia.Media.Imaging;
 using moos.Views;
 using System.Diagnostics;
 using moos.Views.MainWindowControls;
+using DialogHostAvalonia;
+using Avalonia.Metadata;
+using Avalonia.Automation;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 
 
 namespace moos.ViewModels;
@@ -52,10 +57,11 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             LibraryDataGridSource = LocalLibrary.LoadLocalCollection(Constants.LibraryFolder);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             //Logging and Error Display - Critical
-            Debug.WriteLine(ex.Message);
+            ShowError("There was an error in launching the app. Please try again");
+            ExitApp();
         }
         IsLibraryLoading = false;
     }
@@ -107,12 +113,14 @@ public partial class MainWindowViewModel : ViewModelBase
         catch (Exception ex)
         {
             //Logging and Error Display
+            ShowError("There was an error in downloading audio from youtube");
             Debug.WriteLine(ex.Message);
         }
 
         if (!isDownloadSuccess)
         {
             // Logging and Error Display
+            ShowError("There was an error in downloading audio from youtube");
             Debug.WriteLine("There was an error in downloading audio from youtube: {0}", downloadResult);
         }
         else
@@ -162,7 +170,7 @@ public partial class MainWindowViewModel : ViewModelBase
     #endregion
 
     #region Metadata Commands 
-    private IImageEditor _ImageEditor = new ImageEditorService();
+    private readonly IImageEditor _ImageEditor = new ImageEditorService();
 
     public bool IsMetadataEditEnabled
     {
@@ -240,6 +248,7 @@ public partial class MainWindowViewModel : ViewModelBase
             catch (Exception ex)
             {
                 //Logging and Error Display
+                ShowError("There was an error changing track metadata. Please try again");
                 Debug.WriteLine(ex.Message);
             }
         }
@@ -511,14 +520,11 @@ public partial class MainWindowViewModel : ViewModelBase
     #endregion
 
     #region Playlist Commands
-    private PlaylistService _playlistService = new();
+    private readonly PlaylistService _playlistService = new();
 
     private void AddTracksToPlaylist(bool isPlayingTrack)
     {
-        if (Playlist is null)
-        {
-            Playlist = new Models.Playlist();
-        }
+        Playlist ??= new Models.Playlist();
         if (isPlayingTrack)
         {
             CurrentTrackList = Playlist.AddTrack(PlayingTrack, PlayingTrackSpeed, PlayingTrackPitch);
@@ -552,25 +558,121 @@ public partial class MainWindowViewModel : ViewModelBase
         SavedPlaylistNames = _playlistService.GetPlaylistsWithPaths();
     }
 
-    private SavedPlaylist? _SelectedSavedPlayist;
-    public SavedPlaylist? SelectedSavedPlayist
+    private ObservableCollection<SavedPlaylist> _SelectedSavedPlaylists = [];
+    public ObservableCollection<SavedPlaylist> SelectedSavedPlaylists
     {
-        get => _SelectedSavedPlayist;
-        set => this.RaiseAndSetIfChanged(ref _SelectedSavedPlayist, value);
+        get => _SelectedSavedPlaylists;
+        set { 
+            this.RaiseAndSetIfChanged(ref _SelectedSavedPlaylists, value);
+            this.RaisePropertyChanged(nameof(PlaylistItemsSelectedText));
+        }
+
     }
+    public string PlaylistItemsSelectedText
+    {
+        get { return SelectedSavedPlaylists.Count + " item(s) selected"; }
+    }
+    
 
     public ICommand SavePlaylistCommand { get; }
     private async void SavePlaylist()
     {
-        if(Playlist is not null || CurrentTrackList.Count == 0)
+        if(Playlist is null && CurrentTrackList.Count == 0)
         {
             // Pop up
+            ShowError("Playlist is empty!");
             return;
         }
         if(SavedPlaylistNames.Any(savedList => savedList.Name == Playlist.Name))
         {
             // Pop up confirmation - same file path
-            await Task.Run(() => { _playlistService.SavePlaylist(Playlist!); });
+            if (!(await ShowConfirmation("A Playlist with the same name exists. Do you want to overwrite it?"))) return;
+            
+        }
+        await Task.Run(() => { _playlistService.SavePlaylist(Playlist!); });
+        LoadSavedPlaylists();
+    }
+
+    public ICommand LoadPlaylistCommand { get; }
+    private async void LoadPlaylist()
+    {
+        if(Playlist is not null)
+        {
+            Playlist = null;
+        }
+
+        if(SelectedSavedPlaylists.Count == 0 || SelectedSavedPlaylists.Count > 1) return;
+        try
+        {
+            if (SelectedSavedPlaylists[0] is null) throw new ArgumentNullException("No playlist selected to load");
+
+            Playlist = await Task.Run(() => { return _playlistService.LoadPlaylist(SelectedSavedPlaylists[0].FilePath!, LocalLibrary); });
+        }
+        catch (Exception ex)
+        {
+            //Logging and Error Display
+            ShowError("There was an error in loading the playlist. Please try again");
+            Debug.WriteLine(ex.Message);
+            return;
+        }
+        
+    }
+    #endregion
+
+    #region Utility Commands
+    private TaskCompletionSource<bool> _DialogCompletionSource;
+
+    private bool _IsAlertOpen = false;
+    public bool IsAlertOpen
+    {
+        get => _IsAlertOpen;
+        set => this.RaiseAndSetIfChanged(ref _IsAlertOpen, value);
+    }
+
+    private string? _AlertMessage;
+    public string? AlertMessage
+    {
+        get => _AlertMessage;
+        set => this.RaiseAndSetIfChanged(ref _AlertMessage, value);
+    }
+
+    private bool _IsConfirmationAlert = false;
+    public bool IsConfirmationAlert
+    {
+        get => _IsConfirmationAlert;
+        set => this.RaiseAndSetIfChanged(ref _IsConfirmationAlert, value);
+    }
+
+    public string AlertHeader
+    {
+        get { return IsConfirmationAlert ? "Confirm" : "Error" ; }
+    }
+
+    public ICommand ResetDialogHostCommand { get; }
+    public ICommand SetDialogResultCommand { get; }
+
+    private void ShowError(string message)
+    {
+        IsConfirmationAlert = false;
+        AlertMessage = message;
+        IsAlertOpen = true;
+    }
+
+    private async Task<bool> ShowConfirmation(string message)
+    {
+        _DialogCompletionSource = new();
+        IsConfirmationAlert = true;
+        AlertMessage = message;
+        IsAlertOpen = true;
+        bool result = await _DialogCompletionSource.Task;
+        return result;
+    }
+
+    private void ExitApp()
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow is not null)
+        {
+            desktop.MainWindow.Close();
         }
     }
     #endregion
@@ -591,10 +693,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         CancelCurrentDownloadCommand = ReactiveCommand.Create(() => 
         {
-           if(_DownloadService is not null)
-           {
-                _DownloadService.cancelCurrentDownload();
-           } 
+           _DownloadService?.cancelCurrentDownload(); 
         });
 
         AddToPlaylistCommand = ReactiveCommand.Create((bool isPlayingTrack) => 
@@ -614,6 +713,21 @@ public partial class MainWindowViewModel : ViewModelBase
             }
             IsMetadataOptionEnabled = false;
             IsMetadataDialogOpen = true;
+        });
+
+        ResetDialogHostCommand = ReactiveCommand.Create(() =>
+        {
+            IsMetadataDialogOpen = false;
+            IsAlertOpen = false;
+        });
+
+        SetDialogResultCommand = ReactiveCommand.Create((bool isOk) =>
+        {
+            if (IsConfirmationAlert)
+            {
+                _DialogCompletionSource!.TrySetResult(isOk);
+            }
+            DialogHost.GetDialogSession("MainDialogHost")?.Close();
         });
 
         ResetMetadataDialogCommand = ReactiveCommand.Create(() =>
@@ -788,6 +902,11 @@ public partial class MainWindowViewModel : ViewModelBase
         SavePlaylistCommand = ReactiveCommand.Create(() =>
         {
             SavePlaylist();
+        });
+
+        LoadPlaylistCommand = ReactiveCommand.Create(() =>
+        {
+            LoadPlaylist(); 
         });
     }
 }

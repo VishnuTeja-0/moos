@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:moos.ViewModels"
+             xmlns:m="clr-namespace:moos.Models"
+             xmlns:system="clr-namespace:System;assembly=System.Runtime"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="moos.Views.MainWindowControls.PlaylistControls.SavedPlaylists"
+             x:DataType="vm:MainWindowViewModel">
+
+
+  <Panel Classes="tab-content" VerticalAlignment="Stretch">
+    <TextBlock Text="No saved playlists found!"
+               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20" FontSize="20"
+               IsVisible="{Binding !SavedPlaylistNames.Count}" />
+    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="1*, 1*, 1*, 1*" Margin="10"
+          IsVisible="{Binding SavedPlaylistNames.Count}">
+      <Button Name="ButtonLoadPlaylist" Classes="button-playlist" Grid.Row="0" Grid.Column="0" Background="DarkCyan"
+              Command="{Binding LoadPlaylistCommand}"
+              IsEnabled="{Binding SelectedSavedPlaylists.Count, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=1}">
+        <StackPanel Orientation="Horizontal">
+          <PathIcon Data="{StaticResource apps_list_regular}"/>
+          <TextBlock Text="Load" />
+        </StackPanel>
+      </Button>
+      <Button Name="ButtonDeletePlaylist" Classes="button-playlist" Grid.Row="0" Grid.Column="1" Background="IndianRed">
+        <StackPanel Orientation="Horizontal">
+          <PathIcon Data="{StaticResource dismiss_regular}" />
+          <TextBlock Text="Delete" />
+        </StackPanel>
+      </Button>
+      <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="4">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal" Margin="5 0">
+            <CheckBox IsChecked="{Binding SelectedSavedPlaylists.Count, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={Binding SavedPlaylistNames.Count}, Mode=TwoWay}"
+                      Command=""/>
+            <TextBlock Text="{Binding PlaylistItemsSelectedText}" VerticalAlignment="Center"
+                       IsVisible="{Binding SelectedSavedPlaylists.Count}" />
+          </StackPanel>
+          <ListBox ItemsSource="{Binding SavedPlaylistNames}" SelectionMode="Multiple, Toggle"
+                   SelectionChanged="SetSavedPlaylistSelection">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Border BorderBrush="White" BorderThickness="1" Padding="5">
+                  <StackPanel Spacing="1">
+                    <TextBlock Text="{Binding Name}" FontSize="14"/>
+                    <TextBlock Text="{Binding DisplayModifiedDate}" FontSize="10" />
+                  </StackPanel>
+                </Border>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </StackPanel>
+      </Border>
+    </Grid>
+  </Panel>
+  
+</UserControl>

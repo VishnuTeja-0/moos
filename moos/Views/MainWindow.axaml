@@ -32,11 +32,21 @@
     </Style>
   </Window.Styles>
 
-  <dialogHost:DialogHost Identifier="MainDialogHost" CloseOnClickAway="True" 
-                         IsOpen="{Binding IsMetadataDialogOpen}"
+  <dialogHost:DialogHost Identifier="MainDialogHost" CloseOnClickAway="True" DialogClosing="HandleDialogClosing"
                          Margin="{Binding $parent[Window].OffScreenMargin}">
+    
+    <dialogHost:DialogHost.IsOpen>
+      <MultiBinding Converter="{x:Static BoolConverters.Or}">
+        <Binding Path="IsMetadataDialogOpen" />
+        <Binding Path="IsAlertOpen" />
+      </MultiBinding>
+    </dialogHost:DialogHost.IsOpen>
+    
     <dialogHost:DialogHost.DialogContent>
-      <windowViews:MetadataModal />
+      <Panel>
+        <windowViews:MetadataModal IsVisible="{Binding IsMetadataDialogOpen}" />
+        <views:AlertBox IsVisible="{Binding IsAlertOpen}" />
+      </Panel>
     </dialogHost:DialogHost.DialogContent>
 
     <!-- App Content -->

@@ -1,0 +1,179 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:moos.ViewModels"
+             xmlns:m="clr-namespace:moos.Models"
+             xmlns:conv="clr-namespace:moos.Converters"
+             xmlns:system="clr-namespace:System;assembly=System.Runtime"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="moos.Views.MainWindowControls.PlaylistControls.NowPlaying"
+             x:DataType="vm:MainWindowViewModel">
+
+  <UserControl.Resources>
+    <conv:PlaylistTracksRowBackgroundConverter x:Key="PlaylistTracksRowBackgroundConverter" />
+    <conv:CheckForPlayingTrackConverter x:Key="CheckForPlayingTrackConverter" />
+    <conv:PlaylistTracksRowOpacityConverter x:Key="PlaylistTracksRowOpacityConverter" />
+  </UserControl.Resources>
+
+  <Panel Classes="tab-content" VerticalAlignment="Stretch">
+    <TextBlock Text="Add some songs to get started!"
+               HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20" FontSize="20"
+               IsVisible="{Binding !CurrentTrackList.Count}" />
+    <Grid ColumnDefinitions="1*, 1*, 1*, 1*" RowDefinitions="Auto, Auto, Auto" Margin="10"
+          IsVisible="{Binding CurrentTrackList.Count}">
+      <Grid.Styles>
+        <Style Selector="TextBox#TextPlaylistTitle">
+          <Setter Property="BorderBrush" Value="Black" />
+          <Style Selector="^:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="rgba(50,50,50,1)" />
+          </Style>
+          <Style Selector="^:focus /template/ Border#PART_BorderElement">
+            <Setter Property="BorderBrush" Value="DarkCyan" />
+          </Style>
+        </Style>
+      </Grid.Styles>
+      <TextBox Name="TextPlaylistTitle" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 5"
+               Text="{Binding Playlist.Name, Mode=TwoWay}"/>
+      <Button Name="ButtonSavePlaylist" Classes="button-playlist" Grid.Row="1" Grid.Column="0" Background="DarkGray"
+              Command="{Binding SavePlaylistCommand}">
+        <StackPanel Orientation="Horizontal">
+          <PathIcon Data="{StaticResource save_regular}" />
+          <TextBlock Text="Save" />
+        </StackPanel>
+      </Button>
+      <Button Name="ButtonRemoveTrack" Classes="button-playlist" Grid.Row="1" Grid.Column="1" Background="IndianRed">
+        <StackPanel Orientation="Horizontal">
+          <PathIcon Data="{StaticResource dismiss_regular}" />
+          <TextBlock Text="Remove" />
+        </StackPanel>
+      </Button>
+      <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4">
+        <DataGrid Name="GridPlaylist" ItemsSource="{Binding CurrentTrackList}"
+                CanUserReorderColumns="False" CanUserSortColumns="False"
+                SelectionMode="Extended" SelectionChanged="SetPlaylistIndexSelection"
+                GridLinesVisibility="Horizontal" IsReadOnly="True" CornerRadius="4">
+          <DataGrid.Styles>
+            <Style Selector="DataGridColumnHeader">
+              <Setter Property="Background" Value="rgba(36,36,36,1)" />
+              <Setter Property="AreSeparatorsVisible" Value="False" />
+            </Style>
+            <Style Selector="DataGridRow">
+              <Style Selector="^:selected /template/ Rectangle#BackgroundRectangle">
+                <Setter Property="Fill" Value="Gray" />
+              </Style>
+              <Style Selector="^:hover /template/ Rectangle#BackgroundRectangle">
+                <Setter Property="Fill" Value="DarkGray" />
+              </Style>
+              <Setter Property="Margin" Value="0"/>
+              <Setter Property="BorderBrush" Value="rgba(36, 36, 36, 0.4)" />
+              <Setter Property="BorderThickness" Value="1" />
+            </Style>
+            <Style Selector="DataGridCell">
+              <Style Selector="^:current /template/ Grid#FocusVisual">
+                <Setter Property="IsVisible" Value="false" />
+              </Style>
+              <Style Selector="^ TextBlock">
+                <Setter Property="Margin" Value="0" />
+                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                <Setter Property="FontSize" Value="10" />
+                <Style Selector="^.saved-config">
+                  <Setter Property="Margin" Value="0 5 10 0" />
+                </Style>
+              </Style>
+              <Setter Property="Padding" Value="10 5"/>
+            </Style>
+          </DataGrid.Styles>
+          <DataGrid.RowTheme>
+            <ControlTheme x:DataType="vm:MainWindowViewModel" BasedOn="{StaticResource {x:Type DataGridRow}}"
+                          TargetType="DataGridRow">
+              <Setter Property="Background">
+                <MultiBinding Converter="{StaticResource PlaylistTracksRowBackgroundConverter}" Mode="TwoWay">
+                  <Binding Path="#GridPlaylist((vm:MainWindowViewModel)DataContext).Playlist" />
+                  <Binding Path=""/>
+                </MultiBinding>
+              </Setter>
+              <Setter Property="Opacity">
+                <MultiBinding Converter="{StaticResource PlaylistTracksRowOpacityConverter}" Mode="TwoWay">
+                  <Binding Path="#GridPlaylist((vm:MainWindowViewModel)DataContext).Playlist" />
+                  <Binding Path=""/>
+                </MultiBinding>
+              </Setter>
+            </ControlTheme>
+          </DataGrid.RowTheme>
+          <DataGrid.Columns>
+            <DataGridTemplateColumn Header="" Width="0.5*">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <ToggleButton>
+                    <ToggleButton.Styles>
+                      <Style Selector="ToggleButton">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Style Selector="^ PathIcon">
+                          <Setter Property="Width" Value="10" />
+                          <Setter Property="Height" Value="10" />
+                          <Setter Property="Foreground" Value="MediumSeaGreen" />
+                          <Setter Property="Background" Value="Transparent" />
+                        </Style>
+                        <Style Selector="^ PathIcon.play">
+                          <Setter Property="IsVisible" Value="True" />
+                        </Style>
+                        <Style Selector="^ PathIcon.pause">
+                          <Setter Property="IsVisible" Value="False" />
+                        </Style>
+                      </Style>
+                      <Style Selector="ToggleButton:checked">
+                        <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
+                          <Setter Property="Background" Value="Transparent" />
+                        </Style>
+                        <Style Selector="^ PathIcon.play">
+                          <Setter Property="IsVisible" Value="False" />
+                        </Style>
+                        <Style Selector="^ PathIcon.pause">
+                          <Setter Property="IsVisible" Value="True" />
+                        </Style>
+                      </Style>
+                    </ToggleButton.Styles>
+                    <ToggleButton.IsChecked>
+                      <MultiBinding Converter="{StaticResource CheckForPlayingTrackConverter}" Mode="TwoWay">
+                        <Binding Path=""/>
+                        <Binding Path="#GridPlaylist((vm:MainWindowViewModel)DataContext).PlayingTrack" />
+                        <Binding>
+                          <Binding.Source>
+                            <system:Boolean>False</system:Boolean>
+                          </Binding.Source>
+                        </Binding>
+                      </MultiBinding>
+                    </ToggleButton.IsChecked>
+                    <Panel>
+                      <PathIcon Classes="play" Data="{StaticResource play_regular}" />
+                      <PathIcon Classes="pause" Data="{StaticResource pause_regular}" />
+                    </Panel>
+                  </ToggleButton>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="Track" Width="2.25*">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Track.Title}"/>
+                    <TextBlock Text="{Binding Track.DisplayArtists}"
+                               Foreground="LightGray"/>
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Classes="saved-config" Text="{Binding DisplayPitch}" Foreground="LightCyan"/>
+                      <TextBlock Classes="saved-config" Text="{Binding DisplaySpeed}" Foreground="LightCyan" />
+                    </StackPanel>
+                  </StackPanel>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTextColumn Header="Duration" Width="1.25*" FontSize="12"
+                                Binding="{Binding Track.DisplayDuration}" />
+          </DataGrid.Columns>
+        </DataGrid>
+      </Border>
+    </Grid>
+  </Panel>
+  
+</UserControl>

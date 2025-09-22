@@ -150,7 +150,6 @@ public partial class AlbumArtSelectionWindowViewModel : ViewModelBase
     }
 
     public ICommand ToggleEditModeCommand { get; }
-    private Bitmap _temp;
     public ICommand SaveCropCommand { get; }
     private async Task SaveCrop()
     {

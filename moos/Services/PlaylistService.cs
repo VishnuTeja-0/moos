@@ -52,7 +52,6 @@ namespace moos.Services
 
             Directory.CreateDirectory(Constants.PlaylistFolder);
             string fileName = GetValidFilename(save.Name);
-                
             var filepath = Path.Combine(Constants.PlaylistFolder, $"{fileName}.json");
             await File.WriteAllTextAsync(filepath, json);
         }
@@ -80,7 +79,7 @@ namespace moos.Services
         public async Task<Playlist> LoadPlaylist(string playListPath, Library library)
         {
             if (!File.Exists(playListPath))
-                throw new FileNotFoundException("Playlist File not found");
+                throw new FileNotFoundException("Playlist not found");
 
             var json = await File.ReadAllTextAsync(playListPath);
             var saved = JsonSerializer.Deserialize<SavedPlaylist>(json) ?? throw new InvalidOperationException();
