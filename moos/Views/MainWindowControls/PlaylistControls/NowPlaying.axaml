@@ -51,7 +51,7 @@
       <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4">
         <DataGrid Name="GridPlaylist" ItemsSource="{Binding CurrentTrackList}"
                 CanUserReorderColumns="False" CanUserSortColumns="False"
-                SelectionMode="Extended" SelectionChanged="SetPlaylistIndexSelection"
+                SelectionMode="Extended" SelectionChanged="SetPlaylistIndexSelection" DoubleTapped="PlaySingleTrack"
                 GridLinesVisibility="Horizontal" IsReadOnly="True" CornerRadius="4">
           <DataGrid.Styles>
             <Style Selector="DataGridColumnHeader">

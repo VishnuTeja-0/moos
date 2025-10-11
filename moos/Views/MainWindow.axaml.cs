@@ -16,12 +16,16 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     public MainWindow()
     {
         InitializeComponent();
-        this.GetObservable(HeightProperty).Subscribe(height => OnWindowHeightChanged(height));
 
-
-#if DEBUG
+        #if DEBUG
         this.AttachDevTools();
         #endif
+    }
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        this.GetObservable(HeightProperty).Subscribe(height => OnWindowHeightChanged(height));
     }
 
     private void OnWindowHeightChanged(double newHeight)

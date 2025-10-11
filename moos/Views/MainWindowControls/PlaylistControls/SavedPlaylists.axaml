@@ -34,7 +34,7 @@
         <StackPanel>
           <StackPanel Orientation="Horizontal" Margin="5 0">
             <CheckBox IsChecked="{Binding SelectedSavedPlaylists.Count, Converter={x:Static ObjectConverters.Equal}, ConverterParameter={Binding SavedPlaylistNames.Count}, Mode=TwoWay}"
-                      Command=""/>
+                      />
             <TextBlock Text="{Binding PlaylistItemsSelectedText}" VerticalAlignment="Center"
                        IsVisible="{Binding SelectedSavedPlaylists.Count}" />
           </StackPanel>

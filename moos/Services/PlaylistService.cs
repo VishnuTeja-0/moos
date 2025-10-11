@@ -87,6 +87,7 @@ namespace moos.Services
             var playlist = new Playlist();
             playlist.Name = saved.Name;
             playlist.Modified = DateTime.ParseExact(saved.DisplayModifiedDate, "MMM dd, yyyy", CultureInfo.InvariantCulture);
+            playlist.FilePath = playListPath;
             var trackCollection = library.LoadLocalCollection(Constants.LibraryFolder);
             foreach(var item in saved.Tracks)
             {

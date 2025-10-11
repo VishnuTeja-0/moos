@@ -14,6 +14,7 @@ namespace moos.Models
         public string Name { get; set; } = "Untitled";
         public string Description { get; set; }
         public DateTime Modified { get; set; }
+        public string? FilePath { get; set; }
         public ObservableCollection<PlaylistItem> CurrentPlaylist = [];
         private int PlayerPosition = 0;
 
@@ -96,6 +97,11 @@ namespace moos.Models
         {
             PlaylistItem item = CurrentPlaylist!.ElementAt(PlayerPosition);
             return item.Id;
+        }
+
+        public bool IsSavedPlaylist()
+        {
+            return String.IsNullOrEmpty(FilePath);
         }
     }
 }

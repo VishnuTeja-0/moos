@@ -322,7 +322,7 @@ public partial class MainWindowViewModel : ViewModelBase
         ResetPlayback();
         InitializeTrack(track);
 
-        if (speed is null && Playlist is null)
+        if (speed is null && (Playlist is null || Playlist.FilePath is null))
         {
             Playlist = new Models.Playlist();
             CurrentTrackList = Playlist.AddTrack(track, Constants.DefaultPlayingSpeed, Constants.DefaultPlayingPitch);
