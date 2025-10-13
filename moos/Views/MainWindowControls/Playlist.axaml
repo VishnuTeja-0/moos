@@ -70,13 +70,13 @@
         <TabItem.Header>
           <TextBlock Text="Now Playing" />
         </TabItem.Header>
-        <playlistViews:NowPlaying VerticalAlignment="Stretch" />
+        <playlistViews:NowPlaying Name="ViewPlaying" VerticalAlignment="Stretch" />
       </TabItem>
       <TabItem VerticalAlignment="Stretch">
         <TabItem.Header>
           <TextBlock Text="Saved Playlists" />
         </TabItem.Header>
-        <playlistViews:SavedPlaylists VerticalAlignment="Stretch" />
+        <playlistViews:SavedPlaylists Name="ViewSaved" VerticalAlignment="Stretch" />
       </TabItem>
     </TabControl>
   </Border>

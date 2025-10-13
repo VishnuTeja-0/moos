@@ -7,6 +7,7 @@ using Avalonia.LogicalTree;
 using Avalonia.ReactiveUI;
 using moos.ViewModels;
 using moos.Views.MainWindowControls;
+using moos.Views.MainWindowControls.PlaylistControls;
 
 namespace moos.Views;
 
@@ -16,34 +17,35 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
     public MainWindow()
     {
         InitializeComponent();
+        this.GetObservable(HeightProperty).Subscribe(height => OnWindowHeightChanged(height));
 
-        #if DEBUG
+#if DEBUG
         this.AttachDevTools();
         #endif
     }
 
-    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-    {
-        base.OnAttachedToVisualTree(e);
-        this.GetObservable(HeightProperty).Subscribe(height => OnWindowHeightChanged(height));
-    }
+    //protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    //{
+    //    base.OnAttachedToVisualTree(e);
+        
+    //}
 
     private void OnWindowHeightChanged(double newHeight)
     {
         var librarySection = this.FindControl<StackPanel>("SectionLibrary");
-        var libraryView = librarySection.FindControl<Library>("ViewLibrary");
+        var libraryView = this.FindControl<Library>("ViewLibrary");
         var libraryGrid = libraryView.FindControl<DataGrid>("GridLibrary");
         var libraryHeightValue = newHeight * 0.5;
-        librarySection.MinHeight = libraryHeightValue;
         libraryGrid.Height =  libraryHeightValue;
+        librarySection.MinHeight = libraryHeightValue;
 
         var playlistSection = this.FindControl<Panel>("SectionPlaylist");
-        var playlistView = playlistSection.FindControl<Playlist>("ViewPlaylist");
-        var playlistGrid = playlistView.FindControl<DataGrid>("GridPlaylist");
+        var playlistView = this.FindControl<Playlist>("ViewPlaylist");
+        var nowPlayingView = playlistView.FindControl<NowPlaying>("ViewPlaying");
+        var playlistGrid = nowPlayingView.FindControl<DataGrid>("GridPlaylist");
         var playlistHeightValue = newHeight * 0.3;
-        playlistSection.MinHeight = playlistHeightValue;
         playlistGrid.Height = playlistHeightValue;
-        
+        playlistSection.MinHeight = playlistHeightValue;
     }
 
     public void HandleDialogClosing(object? sender, RoutedEventArgs e)
