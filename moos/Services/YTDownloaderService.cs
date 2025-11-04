@@ -85,7 +85,5 @@ namespace moos.Services
             if (string.IsNullOrWhiteSpace(url)) return false;
             return YouTubeUrlRegex.IsMatch(url);
         }
-
-        //public event Action<double>? DownloadProgressChanged;
     }
 }

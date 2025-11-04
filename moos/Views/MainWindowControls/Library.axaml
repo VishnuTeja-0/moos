@@ -32,7 +32,6 @@
             <Setter Property="Margin" Value="5 0" />
             <Setter Property="Foreground" Value="White" />
             <Setter Property="Padding" Value="5" />
-            <Setter Property="IsEnabled" Value="{Binding SelectedTracks, Converter={x:Static ObjectConverters.IsNotNull}}" />
             <Style Selector="^ PathIcon">
               <Setter Property="Height" Value="14" />
             </Style>
@@ -54,14 +53,17 @@
             <TextBlock Text="Edit Metadata" />
           </StackPanel>
         </Button>
-        <Button Name="ButtonDeleteTrack" Classes="button-library" Background="IndianRed">
+        <Button Name="ButtonDeleteTrack" Classes="button-library" Background="IndianRed"
+                IsEnabled="{Binding IsLibraryDeleteButtonEnabled}"
+                Command="{Binding DeleteLibraryTrackCommand}">
           <StackPanel Orientation="Horizontal">
             <PathIcon Data="{StaticResource delete_regular}" />
             <TextBlock Text="Delete Track" />
           </StackPanel>
         </Button>
         <Button Name="ButtonAddPlaying" Classes="button-library" Background="SeaGreen"
-                Command="{Binding AddToPlaylistCommand}">
+                Command="{Binding AddToPlaylistCommand}"
+                IsEnabled="{Binding IsLibraryButtonEnabled}">
           <Button.CommandParameter>
             <system:Boolean>False</system:Boolean>
           </Button.CommandParameter>

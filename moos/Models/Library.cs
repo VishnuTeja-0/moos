@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using TagLib;
 using moos.Interfaces;
+using System.Collections.Generic;
 
 
 namespace moos.Models
@@ -48,13 +49,12 @@ namespace moos.Models
             else 
             {
                 Directory.CreateDirectory(folderPath);
-                //throw new DirectoryNotFoundException($"Local folder not found at \"{folderPath}\"");
             }
 
             return LocalLibraryCollection;
         }
 
-        public async void EditTrackMetadata(Track updatedTrack, string folderPath, IImageEditor imageEditor)
+        public async void EditTrackMetadata(Track updatedTrack, IImageEditor imageEditor)
         {
             string filePath = updatedTrack.FilePath;
 
@@ -79,6 +79,26 @@ namespace moos.Models
             tfile.Tag.Year = uint.Parse(updatedTrack.Year);
             tfile.Save();
             await Task.Delay(500);
+        }
+
+        public async Task<List<string>> DeleteTrackFromCollection(Dictionary<string, string> filePaths)
+        {
+            List<string> exceptionTrackTitles = [];
+            foreach(KeyValuePair<string, string> entry in filePaths)
+            {
+                string title = entry.Key;
+                string filePath = entry.Value;
+                if (filePath is not null || !System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath!);
+                }
+                else
+                {
+                    exceptionTrackTitles.Add(title);
+                }
+            }          
+            await Task.Delay(500);
+            return exceptionTrackTitles;
         }
     }
 }

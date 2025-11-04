@@ -93,17 +93,19 @@ namespace moos.Models
 
         public bool Equals(Track? other)
         {
+            if (other is null) return false;
+
             if (
-                other is null ||
-                this.Title.Trim() != other.Title.Trim() || 
+                !string.Equals(this.Title.Trim(), other.Title.Trim(), StringComparison.Ordinal) || 
                 this.Year != other.Year ||
-                this.Album != other.Album ||
-                this.Artists!.Except(other.Artists!).Any() ||
-                other.Artists!.Except(this.Artists!).Any()
+                !string.Equals(this.Album?.Trim(), other.Album?.Trim(), StringComparison.Ordinal)
                 )
-            {
                 return false;
-            }
+
+            if(this.Artists.Count != other.Artists.Count) return false;
+
+            if (this.Artists!.Except(other.Artists!).Any() || other.Artists!.Except(this.Artists!).Any()) 
+                return false;
 
             return true;
         }

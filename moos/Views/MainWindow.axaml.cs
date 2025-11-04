@@ -24,12 +24,6 @@ public partial class MainWindow : ReactiveWindow<MainWindowViewModel>
         #endif
     }
 
-    //protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
-    //{
-    //    base.OnAttachedToVisualTree(e);
-        
-    //}
-
     private void OnWindowHeightChanged(double newHeight)
     {
         var librarySection = this.FindControl<StackPanel>("SectionLibrary");

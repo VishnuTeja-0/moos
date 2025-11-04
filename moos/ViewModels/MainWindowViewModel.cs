@@ -15,10 +15,9 @@ using moos.Views;
 using System.Diagnostics;
 using moos.Views.MainWindowControls;
 using DialogHostAvalonia;
-using Avalonia.Metadata;
-using Avalonia.Automation;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
+using System.Collections.Generic;
 
 
 namespace moos.ViewModels;
@@ -59,7 +58,7 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         catch (Exception)
         {
-            //Logging and Error Display - Critical
+            //TO DO: Logging - Critical
             ShowError("There was an error in launching the app. Please try again");
             ExitApp();
         }
@@ -93,7 +92,7 @@ public partial class MainWindowViewModel : ViewModelBase
         string downloadResult = "";
         try
         {
-            if (YtUrl is not null)
+            if (!string.IsNullOrEmpty(YtUrl))
             {
                 _DownloadService = new YTDownloaderService();
                 StartDownloadPolling();
@@ -112,14 +111,14 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            //Logging and Error Display
+            //TO DO: Logging
             ShowError("There was an error in downloading audio from youtube");
             Debug.WriteLine(ex.Message);
         }
 
         if (!isDownloadSuccess)
         {
-            // Logging and Error Display
+            // TO DO: Logging
             ShowError("There was an error in downloading audio from youtube");
             Debug.WriteLine("There was an error in downloading audio from youtube: {0}", downloadResult);
         }
@@ -165,22 +164,62 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             this.RaiseAndSetIfChanged(ref _SelectedTracks, value);
             this.RaisePropertyChanged(nameof(IsMetadataEditEnabled));
+            this.RaisePropertyChanged(nameof(IsLibraryButtonEnabled));
+            this.RaisePropertyChanged(nameof(IsLibraryDeleteButtonEnabled));
         }
     }
-    #endregion
-
-    #region Metadata Commands 
-    private readonly IImageEditor _ImageEditor = new ImageEditorService();
 
     public bool IsMetadataEditEnabled
     {
         get
         {
-            return SelectedTracks is not null &&
-                    SelectedTracks.Count == 1 &&
-                    SelectedTracks[0].FilePath != PlayingTrack?.FilePath;
+            return SelectedTracks is not null && SelectedTracks.Count == 1 &&
+                   SelectedTracks[0].FilePath != PlayingTrack?.FilePath;
         }
     }
+
+    public bool IsLibraryButtonEnabled
+    {
+        get { return SelectedTracks is not null && SelectedTracks.Count > 0; }
+    }
+
+    public bool IsLibraryDeleteButtonEnabled
+    {
+        get { return IsLibraryButtonEnabled && !(SelectedTracks!.Any(item => item.FilePath == PlayingTrack?.FilePath)); }
+    }
+
+    public ICommand DeleteLibraryTrackCommand { get; }
+    private async Task<bool> DeleteLibraryTrack()
+    {
+        bool isDeletedSuccessfully = false;
+        var filePaths = SelectedTracks!.ToDictionary(item => item.Title, item => item.FilePath);
+
+        if (!(await ShowConfirmation("This will delete the file(s) from the system. Do you want to proceed?"))) return false;
+
+        try
+        {
+            List<string> undeletedTrackTitles = await Task.Run(() => LocalLibrary.DeleteTrackFromCollection(filePaths));
+            if (undeletedTrackTitles.Count != 0) 
+            {
+                ShowError("The following tracks were not able to be deleted. Please try again:\n\n-" + string.Join("\n-", undeletedTrackTitles));
+            }
+            SelectedTracks = [];
+            await Task.Run(() => LoadLibrary());
+            isDeletedSuccessfully = true;
+        }
+        catch (Exception ex) 
+        {
+            // TO DO: Logging
+            ShowError("There was an error in deleting the file(s). Please try again");
+            Debug.WriteLine(ex.Message);
+        }
+
+        return isDeletedSuccessfully;
+    }
+    #endregion
+
+    #region Metadata Commands 
+    private readonly IImageEditor _ImageEditor = new ImageEditorService();
 
     private Track? _DialogTrack;
     public Track? DialogTrack
@@ -208,7 +247,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ICommand OpenAlbumArtWindowCommand { get; }
 
-    private async void OpenAlbumArtWindow(Window mainWindow)
+    private async Task OpenAlbumArtWindow(Window mainWindow)
     {
         var albumArtWindow = new AlbumArtSelectionWindow
         {
@@ -233,21 +272,21 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public ICommand SubmitMetadataChangesCommand { get; }
 
-    private async void SubmitMetadataChanges()
+    private async Task SubmitMetadataChanges()
     {
         if (!IsDialogYearWarningVisible)
         {
             try
             {
-                await Task.Run(() => { LocalLibrary.EditTrackMetadata(DialogTrack!, Constants.LibraryFolder, _ImageEditor); });
-                await Task.Run(() => { LoadLibrary(); });
+                await Task.Run(() => LocalLibrary.EditTrackMetadata(DialogTrack!, _ImageEditor));
+                await Task.Run(() => LoadLibrary());
                 SelectedTracks = [];
-                SelectedTracks.Add(DialogTrack);
+                SelectedTracks.Add(DialogTrack!);
                 IsMetadataDialogOpen = false;
             }
             catch (Exception ex)
             {
-                //Logging and Error Display
+                //TO DO: Logging
                 ShowError("There was an error changing track metadata. Please try again");
                 Debug.WriteLine(ex.Message);
             }
@@ -322,12 +361,6 @@ public partial class MainWindowViewModel : ViewModelBase
         ResetPlayback();
         InitializeTrack(track);
 
-        if (speed is null && (Playlist is null || Playlist.FilePath is null))
-        {
-            Playlist = new Models.Playlist();
-            CurrentTrackList = Playlist.AddTrack(track, Constants.DefaultPlayingSpeed, Constants.DefaultPlayingPitch);
-        }
-
         if (speed is not null)
         {
             PlayingTrackSpeed = speed.Value;
@@ -391,14 +424,14 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     public ICommand PlayNextCommand { get; }
-    private void PlayNextTrack()
+    private void PlayNextTrack(int? nextPosition = null)
     {
         if (Playlist is null)
         {
             return;
         }
 
-        PlaylistItem? trackItem = Playlist.ReturnTrack();
+        PlaylistItem? trackItem = Playlist.ReturnTrack(nextPosition);
         if (trackItem is null)
         {
             PlayingTrackPosition += 5;
@@ -527,7 +560,7 @@ public partial class MainWindowViewModel : ViewModelBase
         Playlist ??= new Models.Playlist();
         if (isPlayingTrack)
         {
-            CurrentTrackList = Playlist.AddTrack(PlayingTrack, PlayingTrackSpeed, PlayingTrackPitch);
+            CurrentTrackList = Playlist.AddTrack(PlayingTrack!, PlayingTrackSpeed, PlayingTrackPitch);
         }
         else
         {
@@ -537,13 +570,30 @@ public partial class MainWindowViewModel : ViewModelBase
                 SetAndPlayTrack(SelectedTracks[0], null, null); 
             }
         }
+
+        RefreshPlaylistBindings();
     }
 
-    private ObservableCollection<int>? _SelectedPlaylistIndexes;
-    public ObservableCollection<int>? SelectedPlaylistIndexes
+    public ICommand RemoveFromPlaylistCommand { get; }
+    private void RemoveTrackFromPlaylist()
     {
-        get => _SelectedPlaylistIndexes;
-        set => this.RaiseAndSetIfChanged(ref _SelectedPlaylistIndexes, value);
+        CurrentTrackList = Playlist!.RemoveTracks(SelectedPlaylistIds!.ToList());
+        RefreshPlaylistBindings();
+    }
+
+    private void RefreshPlaylistBindings()
+    {
+        this.RaisePropertyChanged(nameof(Playlist));
+        this.RaisePropertyChanged(nameof(CurrentTrackList));
+        this.RaisePropertyChanged(nameof(IsPlaylistChanged));
+    }
+
+
+    private ObservableCollection<int>? _SelectedPlaylistIds;
+    public ObservableCollection<int>? SelectedPlaylistIds
+    {
+        get => _SelectedPlaylistIds;
+        set => this.RaiseAndSetIfChanged(ref _SelectedPlaylistIds, value);
     }
 
     private ObservableCollection<SavedPlaylist> _SavedPlaylistNames;
@@ -565,19 +615,29 @@ public partial class MainWindowViewModel : ViewModelBase
         set { 
             this.RaiseAndSetIfChanged(ref _SelectedSavedPlaylists, value);
             this.RaisePropertyChanged(nameof(PlaylistItemsSelectedText));
+            //this.RaisePropertyChanged(nameof(IsSelectAllPlaylists));
+            this.RaisePropertyChanged(nameof(IsLoadPlaylistEnabled));
         }
 
     }
     public string PlaylistItemsSelectedText
     {
-        get { return SelectedSavedPlaylists.Count + " item(s) selected"; }
+        get { return SelectedSavedPlaylists.Count == SavedPlaylistNames.Count ? "All lists selected" : SelectedSavedPlaylists.Count + " item(s) selected"; }
     }
-    
+
+    public bool IsSelectAllPlaylists
+    {
+        get { return SelectedSavedPlaylists.Count == SavedPlaylistNames.Count; }
+    }
+
+    public ICommand PlayTrackByPlaylistPositionCommand { get; }
+
+    private Models.Playlist? _PrevPlaylist;
 
     public ICommand SavePlaylistCommand { get; }
-    private async void SavePlaylist()
+    private async Task SavePlaylist()
     {
-        if(Playlist is null && CurrentTrackList.Count == 0)
+        if(Playlist is null || CurrentTrackList.Count == 0)
         {
             // Pop up
             ShowError("Playlist is empty!");
@@ -589,12 +649,18 @@ public partial class MainWindowViewModel : ViewModelBase
             if (!(await ShowConfirmation("A Playlist with the same name exists. Do you want to overwrite it?"))) return;
             
         }
-        await Task.Run(() => { _playlistService.SavePlaylist(Playlist!); });
+        await Task.Run(() => _playlistService.SavePlaylist(Playlist));
+        _PrevPlaylist = new Models.Playlist(){ Name = Playlist.Name, CurrentPlaylist = Playlist.CurrentPlaylist };
         LoadSavedPlaylists();
     }
 
+    public bool IsPlaylistChanged
+    {
+        get { return Playlist is not null && (Playlist.Id == 0 || !Playlist.Equals(_PrevPlaylist)); }
+    }
+
     public ICommand LoadPlaylistCommand { get; }
-    private async void LoadPlaylist()
+    private async Task LoadPlaylist()
     {
         if(Playlist is not null)
         {
@@ -610,12 +676,44 @@ public partial class MainWindowViewModel : ViewModelBase
         }
         catch (Exception ex)
         {
-            //Logging and Error Display
+            //TO DO: Logging
             ShowError("There was an error in loading the playlist. Please try again");
             Debug.WriteLine(ex.Message);
             return;
         }
         
+    }
+
+    public bool IsLoadPlaylistEnabled
+    {
+        get { return SelectedSavedPlaylists is not null && SelectedSavedPlaylists.Count == 1; }
+    }
+
+    public ICommand DeletePlaylistsCommand { get; }
+    private async Task<bool> DeletePlaylists()
+    {
+        bool isDeletedSuccessful = false;
+
+        if (!await ShowConfirmation("This will delete the playlist(s) from the system. Do you want to proceed?")) return false;
+
+        try
+        {
+            List<string> undeletedPlaylistNames = await Task.Run(() => _playlistService.DeletePlaylists(SelectedSavedPlaylists.ToList()));
+            if(undeletedPlaylistNames.Count != 0)
+            {
+                ShowError("The following playlists were not able to be deleted. Please try again:\n\n-" + string.Join("\n-", undeletedPlaylistNames));
+            }
+            SelectedSavedPlaylists = [];
+            await Task.Run(() => LoadSavedPlaylists());
+            isDeletedSuccessful = true;
+        }
+        catch (Exception ex) 
+        {
+            // TO DO: Logging
+            ShowError("There was an error in deleting the playlist file(s). Please try again");
+            Debug.WriteLine(ex.Message);
+        }
+        return isDeletedSuccessful;
     }
     #endregion
 
@@ -686,7 +784,7 @@ public partial class MainWindowViewModel : ViewModelBase
             LoadLibrary();
         });
 
-        DownloadYoutubeMp3DirectCommand = ReactiveCommand.Create(async () => 
+        DownloadYoutubeMp3DirectCommand = ReactiveCommand.CreateFromTask(async () => 
         {
             await GetYoutubeAudio();
         });
@@ -696,11 +794,19 @@ public partial class MainWindowViewModel : ViewModelBase
            _DownloadService?.cancelCurrentDownload(); 
         });
 
+        DeleteLibraryTrackCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            await DeleteLibraryTrack();
+        });
+
         AddToPlaylistCommand = ReactiveCommand.Create((bool isPlayingTrack) => 
         {
             AddTracksToPlaylist(isPlayingTrack);
-            this.RaisePropertyChanged(nameof(Playlist));
-            this.RaisePropertyChanged(nameof(CurrentTrackList)) ;
+        });
+
+        RemoveFromPlaylistCommand = ReactiveCommand.Create(() => 
+        {
+            RemoveTrackFromPlaylist();
         });
 
         OpenMetadataDialogCommand = ReactiveCommand.Create(() =>
@@ -746,9 +852,9 @@ public partial class MainWindowViewModel : ViewModelBase
             OpenAlbumArtWindow(parentWindow);
         });
 
-        SubmitMetadataChangesCommand = ReactiveCommand.Create(() =>
+        SubmitMetadataChangesCommand = ReactiveCommand.CreateFromTask(async () =>
         {
-            SubmitMetadataChanges();
+            await SubmitMetadataChanges();
         });
 
         EnterNewDialogArtistCommand = ReactiveCommand.Create(() =>
@@ -787,7 +893,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
         PlaySingleTrackCommand = ReactiveCommand.Create( (Track? selectedTrack) =>
         {
-            Track track = selectedTrack ?? SelectedTracks[0];
+            Track track = selectedTrack ?? SelectedTracks![0];
+            if(Playlist is null || Playlist.FilePath is null)
+            {
+                Playlist = new Models.Playlist();
+                CurrentTrackList = Playlist.AddTrack(track, Constants.DefaultPlayingSpeed, Constants.DefaultPlayingPitch);
+                RefreshPlaylistBindings();
+            }
             SetAndPlayTrack(track, null, null);
         });
 
@@ -834,6 +946,12 @@ public partial class MainWindowViewModel : ViewModelBase
         PlayNextCommand = ReactiveCommand.Create(() =>
         {
             PlayNextTrack();
+        });
+
+        PlayTrackByPlaylistPositionCommand = ReactiveCommand.Create((int? playlistTrackId) =>
+        {
+            int itemPosition = playlistTrackId ?? SelectedPlaylistIds![0];
+            PlayNextTrack(itemPosition);
         });
 
         PlayPreviousCommand = ReactiveCommand.Create(() =>
@@ -899,14 +1017,19 @@ public partial class MainWindowViewModel : ViewModelBase
                 }
             });
 
-        SavePlaylistCommand = ReactiveCommand.Create(() =>
+        SavePlaylistCommand = ReactiveCommand.CreateFromTask(async () =>
         {
-            SavePlaylist();
+            await SavePlaylist();
         });
 
-        LoadPlaylistCommand = ReactiveCommand.Create(() =>
+        LoadPlaylistCommand = ReactiveCommand.CreateFromTask(async () =>
         {
-            LoadPlaylist(); 
+            await LoadPlaylist(); 
+        });
+
+        DeletePlaylistsCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            await DeletePlaylists();
         });
     }
 }

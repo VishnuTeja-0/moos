@@ -21,10 +21,11 @@ public partial class Library : UserControl
         if (localLibraryGrid is not null && localLibraryGrid.SelectedItems.Count > 0)
         {
             var vm = (MainWindowViewModel)DataContext!;
-            vm.SelectedTracks = new System.Collections.ObjectModel.ObservableCollection<Track>(
+            var _selectedTracks = new System.Collections.ObjectModel.ObservableCollection<Track>(
                 localLibraryGrid.SelectedItems
                 .Cast<object>()
                 .OfType<Track>());
+            vm.SelectedTracks = _selectedTracks;
         }
     }
 

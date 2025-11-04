@@ -1,6 +1,5 @@
-﻿using Avalonia.Platform.Storage;
-using moos.Models;
-using NAudio.Midi;
+﻿using moos.Models;
+using NAudio.Mixer;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -8,8 +7,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Runtime.Intrinsics.Arm;
-using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
@@ -33,6 +30,8 @@ namespace moos.Services
 
     public class PlaylistService
     {
+        private JsonSerializerOptions _writeOptions = new JsonSerializerOptions { WriteIndented = true };
+
         public async void SavePlaylist(Playlist playlist)
         {
             var save = new SavedPlaylist
@@ -47,8 +46,8 @@ namespace moos.Services
                 }).ToList(),
                 DisplayModifiedDate = DateTime.Now.ToString("MMM dd, yyyy")
             };
-
-            var json = JsonSerializer.Serialize(save, new JsonSerializerOptions { WriteIndented = true });
+            
+            var json = JsonSerializer.Serialize(save, _writeOptions);
 
             Directory.CreateDirectory(Constants.PlaylistFolder);
             string fileName = GetValidFilename(save.Name);
@@ -100,6 +99,24 @@ namespace moos.Services
             }
 
             return playlist;
+        }
+
+        public async Task<List<string>> DeletePlaylists(List<SavedPlaylist> listsToDelete)
+        {
+            List<string> exceptionPlaylists = [];
+            foreach (SavedPlaylist list in listsToDelete)
+            {
+                if(list.FilePath is not null || !File.Exists(list.FilePath))
+                {
+                    File.Delete(list.FilePath!);
+                }
+                else
+                {
+                    exceptionPlaylists.Add(list.Name);
+                }
+            }
+            await Task.Delay(300);
+            return exceptionPlaylists;
         }
 
         private string GetValidFilename(string playlistName)

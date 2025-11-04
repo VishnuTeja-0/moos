@@ -20,7 +20,7 @@
     <TextBlock Text="Add some songs to get started!"
                HorizontalAlignment="Center" VerticalAlignment="Center" Margin="20" FontSize="20"
                IsVisible="{Binding !CurrentTrackList.Count}" />
-    <Grid ColumnDefinitions="1*, 1*, 1*, 1*" RowDefinitions="Auto, Auto, Auto" Margin="10"
+    <Grid Name="GridNowPlaying" ColumnDefinitions="1*, 1*, 1*, 1*" RowDefinitions="Auto, Auto, Auto" Margin="10"
           IsVisible="{Binding CurrentTrackList.Count}">
       <Grid.Styles>
         <Style Selector="TextBox#TextPlaylistTitle">
@@ -36,13 +36,15 @@
       <TextBox Name="TextPlaylistTitle" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Margin="0 5"
                Text="{Binding Playlist.Name, Mode=TwoWay}"/>
       <Button Name="ButtonSavePlaylist" Classes="button-playlist" Grid.Row="1" Grid.Column="0" Background="DarkGray"
+              IsEnabled="{Binding IsPlaylistChanged}"
               Command="{Binding SavePlaylistCommand}">
         <StackPanel Orientation="Horizontal">
           <PathIcon Data="{StaticResource save_regular}" />
           <TextBlock Text="Save" />
         </StackPanel>
       </Button>
-      <Button Name="ButtonRemoveTrack" Classes="button-playlist" Grid.Row="1" Grid.Column="1" Background="IndianRed">
+      <Button Name="ButtonRemoveTrack" Classes="button-playlist" Grid.Row="1" Grid.Column="1" Background="IndianRed"
+              Command="{Binding RemoveFromPlaylistCommand}">
         <StackPanel Orientation="Horizontal">
           <PathIcon Data="{StaticResource dismiss_regular}" />
           <TextBlock Text="Remove" />
@@ -51,7 +53,7 @@
       <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4">
         <DataGrid Name="GridPlaylist" ItemsSource="{Binding CurrentTrackList}"
                 CanUserReorderColumns="False" CanUserSortColumns="False"
-                SelectionMode="Extended" SelectionChanged="SetPlaylistIndexSelection" DoubleTapped="PlaySingleTrack"
+                SelectionMode="Extended" SelectionChanged="SetPlaylistIndexSelection" DoubleTapped="PlaySinglePlaylistTrack"
                 GridLinesVisibility="Horizontal" IsReadOnly="True" CornerRadius="4">
           <DataGrid.Styles>
             <Style Selector="DataGridColumnHeader">
@@ -105,7 +107,8 @@
             <DataGridTemplateColumn Header="" Width="0.5*">
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate>
-                  <ToggleButton>
+                  <ToggleButton Command="{Binding #GridPlaylist((vm:MainWindowViewModel)DataContext).PlayTrackByPlaylistPositionCommand}"
+                                CommandParameter="{Binding Id}">
                     <ToggleButton.Styles>
                       <Style Selector="ToggleButton">
                         <Setter Property="Background" Value="Transparent"/>
