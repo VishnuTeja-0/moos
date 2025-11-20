@@ -2,6 +2,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
+             xmlns:idd="clr-namespace:Avalonia.Xaml.Interactions.DragAndDrop;assembly=Avalonia.Xaml.Interactions.DragAndDrop"
+             xmlns:lb="clr-namespace:moos.Behaviors"
              xmlns:vm="clr-namespace:moos.ViewModels"
              xmlns:m="clr-namespace:moos.Models"
              xmlns:conv="clr-namespace:moos.Converters"
@@ -14,6 +17,7 @@
     <conv:PlaylistTracksRowBackgroundConverter x:Key="PlaylistTracksRowBackgroundConverter" />
     <conv:CheckForPlayingTrackConverter x:Key="CheckForPlayingTrackConverter" />
     <conv:PlaylistTracksRowOpacityConverter x:Key="PlaylistTracksRowOpacityConverter" />
+    <lb:PlaylistDragAndDropHandler x:Key="PlaylistDragAndDropHandler" />
   </UserControl.Resources>
 
   <Panel Classes="tab-content" VerticalAlignment="Stretch">
@@ -51,7 +55,7 @@
         </StackPanel>
       </Button>
       <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="4">
-        <DataGrid Name="GridPlaylist" ItemsSource="{Binding CurrentTrackList}"
+        <DataGrid Name="GridPlaylist" ItemsSource="{Binding CurrentTrackList}" Classes="draggable"
                 CanUserReorderColumns="False" CanUserSortColumns="False"
                 SelectionMode="Extended" SelectionChanged="SetPlaylistIndexSelection" DoubleTapped="PlaySinglePlaylistTrack"
                 GridLinesVisibility="Horizontal" IsReadOnly="True" CornerRadius="4">
@@ -70,6 +74,14 @@
               <Setter Property="Margin" Value="0"/>
               <Setter Property="BorderBrush" Value="rgba(36, 36, 36, 0.4)" />
               <Setter Property="BorderThickness" Value="1" />
+              <Setter Property="DragDrop.AllowDrop" Value="True"/>
+              <Setter Property="(i:Interaction.Behaviors)">
+                <i:BehaviorCollectionTemplate>
+                  <i:BehaviorCollection>
+                    <ContextDragBehavior/>
+                  </i:BehaviorCollection>
+                </i:BehaviorCollectionTemplate>
+              </Setter>
             </Style>
             <Style Selector="DataGridCell">
               <Style Selector="^:current /template/ Grid#FocusVisual">
@@ -91,7 +103,6 @@
                           TargetType="DataGridRow">
               <Setter Property="Background">
                 <MultiBinding Converter="{StaticResource PlaylistTracksRowBackgroundConverter}" Mode="TwoWay">
-                  <Binding Path="#GridPlaylist((vm:MainWindowViewModel)DataContext).Playlist" />
                   <Binding Path=""/>
                 </MultiBinding>
               </Setter>
@@ -146,6 +157,7 @@
                             <system:Boolean>False</system:Boolean>
                           </Binding.Source>
                         </Binding>
+                        <Binding Path="#GridPlaylist((vm:MainWindowViewModel)DataContext).IsPlaying" />
                       </MultiBinding>
                     </ToggleButton.IsChecked>
                     <Panel>
@@ -174,6 +186,11 @@
             <DataGridTextColumn Header="Duration" Width="1.25*" FontSize="12"
                                 Binding="{Binding Track.DisplayDuration}" />
           </DataGrid.Columns>
+          <i:Interaction.Behaviors>
+            <i:BehaviorCollection>
+              <ContextDropBehavior Handler="{StaticResource PlaylistDragAndDropHandler}" />
+            </i:BehaviorCollection>
+          </i:Interaction.Behaviors>
         </DataGrid>
       </Border>
     </Grid>

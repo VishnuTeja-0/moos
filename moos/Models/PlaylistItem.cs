@@ -10,6 +10,7 @@ namespace moos.Models
     {
         public int Id { get; set; } = 1;
         public bool IsActive { get; set; } = true;
+        public bool IsPlaying { get; set; } = false;
         public Track Track { get; set; } = track;
         public float Speed { get; set; } = speed;
         public float Pitch { get; set; } = pitch;

@@ -144,6 +144,7 @@
                           <system:Boolean>True</system:Boolean>
                         </Binding.Source>
                       </Binding>
+                      <Binding Path="#GridLibrary((vm:MainWindowViewModel)DataContext).IsPlaying" />
                     </MultiBinding>
                   </ToggleButton.IsChecked>
                   <ToggleButton.Template>

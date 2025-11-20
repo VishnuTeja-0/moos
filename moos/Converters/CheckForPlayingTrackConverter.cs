@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Avalonia.Data.Converters;
 using moos.Models;
+using moos.ViewModels;
 
 namespace moos.Converters
 {
@@ -10,18 +11,20 @@ namespace moos.Converters
     {
         public object Convert(IList<object?> value, Type targetType, object? parameter, CultureInfo culture)
         {
-            if(value is not null && value.Count == 3)
+            bool isPlaying = false;
+            if(value is not null && value.Count == 4)
             {
                 bool isLibraryCheck = value[2] as bool? ?? true;
                 Track? checkTrack = isLibraryCheck ? value[0] as Track : (value[0] as PlaylistItem)?.Track;
                 Track? playingTrack = value[1] as Track;
+                isPlaying = value[3] as bool? ?? false;
                 if (checkTrack?.FilePath == playingTrack?.FilePath)
                 {
-                    return true;
+                    return true && (isLibraryCheck || isPlaying);
                 }
             }
 
-            return false;
+            return false && isPlaying;
         }
 
         public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

@@ -12,10 +12,9 @@ namespace moos.Converters
     {
         public object Convert(IList<object?> value, Type targetType, object? parameter, CultureInfo culture)
         {
-            if (value is not null && value.Count == 2) {
-                Playlist playlist = value[0] as Playlist;
-                PlaylistItem item = value[1] as PlaylistItem;
-                if(playlist is not null && item is not null && item.Id == playlist.GetCurrentPlayingId())
+            if (value is not null && value.Count == 1) {
+                PlaylistItem item = value[0] as PlaylistItem;
+                if(item is not null && item.IsPlaying)
                 {
                     return new SolidColorBrush(Colors.DarkCyan, 1);
                 }

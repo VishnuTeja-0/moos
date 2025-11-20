@@ -26,7 +26,11 @@ namespace moos.Models
             {
                 item.Id = CurrentPlaylist[CurrentPlaylist.Count - 1].Id + 1;
             }
-            CurrentPlaylist.Add(item);
+            else
+            {
+                item.IsPlaying = true;
+            }
+                CurrentPlaylist.Add(item);
             return CurrentPlaylist;
         }
 
@@ -44,7 +48,7 @@ namespace moos.Models
             HashSet<int> idsToRemove = [.. removeIds];
             int currentTrackId = GetCurrentPlayingId();
             List<PlaylistItem> remaining = [.. CurrentPlaylist.Where(item => !idsToRemove.Contains(item.Id))];
-
+            // I had to think about this
             // Find new playing index
             PlayerPosition = remaining.FindIndex(item => item.Id == currentTrackId);
 
@@ -67,6 +71,7 @@ namespace moos.Models
 
         public PlaylistItem? ReturnTrack(int? newPlayerId = null)
         {
+            CurrentPlaylist[PlayerPosition].IsPlaying = false;
             if(newPlayerId is null && PlayerPosition < CurrentPlaylist!.Count - 1)
             {
                 PlayerPosition++;
@@ -83,6 +88,7 @@ namespace moos.Models
             {
                 return null;
             }
+            CurrentPlaylist[PlayerPosition].IsPlaying = true;
 
             return CurrentPlaylist!.ElementAt(PlayerPosition);
         }
@@ -95,6 +101,14 @@ namespace moos.Models
             if (currentIndex == PlayerPosition)
             {
                 PlayerPosition = newIndex;
+            }
+            else if (currentIndex > PlayerPosition && newIndex <= PlayerPosition)
+            {
+                PlayerPosition++;
+            }
+            else if(currentIndex < PlayerPosition && newIndex > PlayerPosition)
+            {
+                PlayerPosition--;
             }
             return CurrentPlaylist;
         }

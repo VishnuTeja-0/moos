@@ -409,7 +409,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private void StartPlaybackTimer()
     {
         _playbackTimerSubscription = Observable
-            .Interval(TimeSpan.FromMilliseconds(300))
+            .Interval(TimeSpan.FromMilliseconds(500))
             .SubscribeOn(TaskPoolScheduler.Default)
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(_ =>
@@ -473,9 +473,9 @@ public partial class MainWindowViewModel : ViewModelBase
     }
 
     public ICommand PlayPauseActiveTrackCommand { get; }
-    private void PlayPauseActiveTrack(bool IsMuted)
+    private void PlayPauseActiveTrack(bool isPaused)
     {
-        if (!IsMuted)
+        if (!isPaused)
         {
             _Player!.PauseTrack();
             IsPlaying = false;
@@ -581,6 +581,15 @@ public partial class MainWindowViewModel : ViewModelBase
         RefreshPlaylistBindings();
     }
 
+    public ICommand ReorderPlaylistTrackCommand { get; }
+    private void ReorderPlaylistTrack(int trackId, int destId)
+    {
+        // UI update workaround
+        CurrentTrackList = [];
+        CurrentTrackList = Playlist!.ReorderPlaylist(Playlist.GetPositionById(trackId), Playlist.GetPositionById(destId));
+        RefreshPlaylistBindings();
+    }
+
     private void RefreshPlaylistBindings()
     {
         this.RaisePropertyChanged(nameof(Playlist));
@@ -615,7 +624,6 @@ public partial class MainWindowViewModel : ViewModelBase
         set { 
             this.RaiseAndSetIfChanged(ref _SelectedSavedPlaylists, value);
             this.RaisePropertyChanged(nameof(PlaylistItemsSelectedText));
-            //this.RaisePropertyChanged(nameof(IsSelectAllPlaylists));
             this.RaisePropertyChanged(nameof(IsLoadPlaylistEnabled));
         }
 
@@ -778,20 +786,20 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel()
     {
         RxApp.MainThreadScheduler.Schedule(() => { LoadLibrary(); LoadSavedPlaylists(); });
-        
+
         ReloadLibrary = ReactiveCommand.Create(() =>
         {
             LoadLibrary();
         });
 
-        DownloadYoutubeMp3DirectCommand = ReactiveCommand.CreateFromTask(async () => 
+        DownloadYoutubeMp3DirectCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             await GetYoutubeAudio();
         });
 
-        CancelCurrentDownloadCommand = ReactiveCommand.Create(() => 
+        CancelCurrentDownloadCommand = ReactiveCommand.Create(() =>
         {
-           _DownloadService?.cancelCurrentDownload(); 
+            _DownloadService?.cancelCurrentDownload();
         });
 
         DeleteLibraryTrackCommand = ReactiveCommand.CreateFromTask(async () =>
@@ -799,14 +807,20 @@ public partial class MainWindowViewModel : ViewModelBase
             await DeleteLibraryTrack();
         });
 
-        AddToPlaylistCommand = ReactiveCommand.Create((bool isPlayingTrack) => 
+        AddToPlaylistCommand = ReactiveCommand.Create((bool isPlayingTrack) =>
         {
             AddTracksToPlaylist(isPlayingTrack);
         });
 
-        RemoveFromPlaylistCommand = ReactiveCommand.Create(() => 
+        RemoveFromPlaylistCommand = ReactiveCommand.Create(() =>
         {
             RemoveTrackFromPlaylist();
+        });
+
+        ReorderPlaylistTrackCommand = ReactiveCommand.Create(((int trackId, int destinationId) ids) =>
+        {
+            var (trackId, destinationId) = ids;
+            ReorderPlaylistTrack(trackId, destinationId);
         });
 
         OpenMetadataDialogCommand = ReactiveCommand.Create(() =>
@@ -935,13 +949,13 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // Subscription for track seekbar change
         this.WhenAnyValue(x => x.PlayingTrackPosition)
-            .Throttle(TimeSpan.FromMilliseconds(100), RxApp.MainThreadScheduler) 
+            .Throttle(TimeSpan.FromMilliseconds(100), RxApp.MainThreadScheduler)
             .Where(newPosition => PlayingTrack is not null && _Player is not null &&
                    Math.Abs(newPosition - _Player.GetPosition()) > 1)
             .Subscribe(_ =>
             {
                 _Player!.SeekToPosition(PlayingTrackPosition);
-            });
+            });            
 
         PlayNextCommand = ReactiveCommand.Create(() =>
         {
@@ -950,8 +964,15 @@ public partial class MainWindowViewModel : ViewModelBase
 
         PlayTrackByPlaylistPositionCommand = ReactiveCommand.Create((int? playlistTrackId) =>
         {
-            int itemPosition = playlistTrackId ?? SelectedPlaylistIds![0];
-            PlayNextTrack(itemPosition);
+            int trackId = playlistTrackId ?? SelectedPlaylistIds![0];
+            if(trackId == Playlist!.GetCurrentPlayingId())
+            {
+                PlayPauseActiveTrack(!IsPlaying);
+            }
+            else
+            {
+                PlayNextTrack(trackId);
+            }
         });
 
         PlayPreviousCommand = ReactiveCommand.Create(() =>
