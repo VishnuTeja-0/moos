@@ -8,6 +8,13 @@ using System.Text.Json;
 
 namespace moos.Models
 {
+    public enum RepeatPlayStates
+    {
+        Off,
+        All,
+        One
+    }
+
     public class Playlist(): IEquatable<Playlist>
     {
         public int Id = 0;
@@ -69,18 +76,29 @@ namespace moos.Models
             return CurrentPlaylist;
         }
 
-        public PlaylistItem? ReturnTrack(int? newPlayerId = null)
+        public PlaylistItem? ReturnTrack(int? newPlayerId = null, RepeatPlayStates? playState = RepeatPlayStates.Off)
         {
             CurrentPlaylist[PlayerPosition].IsPlaying = false;
-            if(newPlayerId is null && PlayerPosition < CurrentPlaylist!.Count - 1)
+            if(newPlayerId is null && playState == RepeatPlayStates.One)
+            {
+            }
+            else if (newPlayerId is null && PlayerPosition < CurrentPlaylist!.Count - 1)
             {
                 PlayerPosition++;
             }
-            else if(newPlayerId == -1 && PlayerPosition > 0)
+            else if(newPlayerId is null && PlayerPosition == CurrentPlaylist!.Count - 1 && playState == RepeatPlayStates.All)
+            {
+                PlayerPosition = 0;
+            }
+            else if (newPlayerId == -1 && PlayerPosition > 0)
             {
                 PlayerPosition--;
             }
-            else if(newPlayerId is not null && newPlayerId.Value != -1)
+            else if(newPlayerId == -1 && PlayerPosition == 0 && playState == RepeatPlayStates.All)
+            {
+                PlayerPosition = CurrentPlaylist!.Count - 1;
+            }
+            else if (newPlayerId is not null && newPlayerId.Value != -1)
             {
                 PlayerPosition = GetPositionById(newPlayerId.Value);
             }
@@ -106,7 +124,7 @@ namespace moos.Models
             {
                 PlayerPosition++;
             }
-            else if(currentIndex < PlayerPosition && newIndex > PlayerPosition)
+            else if(currentIndex < PlayerPosition && newIndex >= PlayerPosition)
             {
                 PlayerPosition--;
             }

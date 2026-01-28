@@ -431,7 +431,7 @@ public partial class MainWindowViewModel : ViewModelBase
             return;
         }
 
-        PlaylistItem? trackItem = Playlist.ReturnTrack(nextPosition);
+        PlaylistItem? trackItem = Playlist.ReturnTrack(nextPosition, _RepeatPlayState);
         if (trackItem is null)
         {
             PlayingTrackPosition += 5;
@@ -549,6 +549,21 @@ public partial class MainWindowViewModel : ViewModelBase
     public string DisplayPlayingPitch
     {
         get { return PlayingTrackPitch.ToString("0.0"); }
+    }
+
+    private bool? _IsRepeatPlay = false;
+    public bool? IsRepeatPlay
+    {
+        get => _IsRepeatPlay;
+        set 
+        {
+            this.RaiseAndSetIfChanged(ref _IsRepeatPlay, value);
+            this.RaisePropertyChanged(nameof(_RepeatPlayState));
+        } 
+    }
+    private RepeatPlayStates _RepeatPlayState
+    {
+        get { return IsRepeatPlay is not null ? ((bool)IsRepeatPlay ? RepeatPlayStates.All : RepeatPlayStates.Off) : RepeatPlayStates.One; }
     }
     #endregion
 
@@ -959,7 +974,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
         PlayNextCommand = ReactiveCommand.Create(() =>
         {
+            // ignore repeat-one for next button
+            var prevReplayState = IsRepeatPlay;
+            if (IsRepeatPlay is null) {
+                IsRepeatPlay = false;
+            }            
+
             PlayNextTrack();
+
+            // restore replay state
+            IsRepeatPlay = prevReplayState;
         });
 
         PlayTrackByPlaylistPositionCommand = ReactiveCommand.Create((int? playlistTrackId) =>

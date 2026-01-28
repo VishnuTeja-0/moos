@@ -227,7 +227,8 @@
         </StackPanel>
         <StackPanel Grid.Row="0" Grid.Column="4" Orientation="Horizontal" 
                     Margin="5" VerticalAlignment="Center">
-          <ToggleButton IsThreeState="True">
+          <ToggleButton Name="ButtonRepeat" IsThreeState="True"
+                        IsChecked="{Binding IsRepeatPlay, Mode=TwoWay}">
             <ToggleButton.Styles>
               <Style Selector="ToggleButton">
                 <Setter Property="Template">
