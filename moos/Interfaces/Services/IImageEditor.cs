@@ -1,6 +1,6 @@
 using Avalonia.Media.Imaging;
 
-namespace moos.Interfaces;
+namespace moos.Interfaces.Services;
 
 public interface IImageEditor
 {

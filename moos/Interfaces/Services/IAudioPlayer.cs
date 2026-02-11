@@ -1,4 +1,4 @@
-namespace moos.Interfaces;
+namespace moos.Interfaces.Services;
 
 public interface IAudioPlayer
 {

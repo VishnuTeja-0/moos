@@ -8,7 +8,7 @@ using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using moos.Interfaces;
+using moos.Interfaces.Services;
 using moos.Services;
 using ReactiveUI;
 

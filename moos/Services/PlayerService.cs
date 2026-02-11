@@ -1,8 +1,8 @@
 ﻿using NAudio.Wave;
 using System;
-using moos.Interfaces;
 using NAudio.Wave.SampleProviders;
 using VarispeedDemo.SoundTouch;
+using moos.Interfaces.Services;
 
 
 namespace moos.Services

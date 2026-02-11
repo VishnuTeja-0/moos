@@ -1,7 +1,7 @@
 using System.IO;
 using Avalonia;
 using Avalonia.Media.Imaging;
-using moos.Interfaces;
+using moos.Interfaces.Services;
 using SkiaSharp;
 
 namespace moos.Services;

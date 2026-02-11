@@ -1,6 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
-using moos.Interfaces;
+using moos.Interfaces.Services;
 
 namespace moos.Services;
 

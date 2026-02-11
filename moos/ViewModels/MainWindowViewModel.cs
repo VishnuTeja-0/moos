@@ -1,15 +1,11 @@
 ﻿using moos.Models;
 using ReactiveUI;
-using System;
-using System.Threading.Tasks;
 using System.Windows.Input;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Collections.ObjectModel;
 using moos.Services;
-using System.Linq;
 using Avalonia.Controls;
-using moos.Interfaces;
 using Avalonia.Media.Imaging;
 using moos.Views;
 using System.Diagnostics;
@@ -17,7 +13,7 @@ using moos.Views.MainWindowControls;
 using DialogHostAvalonia;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
-using System.Collections.Generic;
+using moos.Interfaces.Services;
 
 
 namespace moos.ViewModels;
@@ -146,7 +142,7 @@ public partial class MainWindowViewModel : ViewModelBase
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(_ =>
             {
-                DownloadProgress = _DownloadService.GetProgressPercentage() * 0.8;
+                DownloadProgress = _DownloadService.GetDownloadProgressPercentage() * 0.8;
 
                 if (DownloadProgress >= 80)
                 {
@@ -814,7 +810,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         CancelCurrentDownloadCommand = ReactiveCommand.Create(() =>
         {
-            _DownloadService?.cancelCurrentDownload();
+            _DownloadService?.CancelCurrentDownload();
         });
 
         DeleteLibraryTrackCommand = ReactiveCommand.CreateFromTask(async () =>

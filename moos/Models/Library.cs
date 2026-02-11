@@ -6,8 +6,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using TagLib;
-using moos.Interfaces;
 using System.Collections.Generic;
+using moos.Interfaces.Services;
 
 
 namespace moos.Models

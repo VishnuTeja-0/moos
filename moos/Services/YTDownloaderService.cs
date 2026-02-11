@@ -1,20 +1,12 @@
-
-using System;
-using System.Collections.ObjectModel;
-using System.IO;
-using System.Linq;
-using System.Reactive.Linq;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
-using Avalonia.Controls;
+using moos.Interfaces.Services;
 using moos.Models;
 using YoutubeDLSharp;
 using YoutubeDLSharp.Metadata;
 
 namespace moos.Services
 {
-    public class YTDownloaderService
+    public class YTDownloaderService : IYtDownloader
     {
         private static readonly Regex YouTubeUrlRegex = new Regex(
         @"^(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})",
@@ -29,12 +21,7 @@ namespace moos.Services
             string downloadResult = "";
 
             if(IsValidYoutubeUrl(url)){
-                ytdl = new YoutubeDL();
-
-                ytdl.YoutubeDLPath = Path.Combine(dependencyPath, "yt-dlp");
-                ytdl.FFmpegPath = Path.Combine(dependencyPath, "ffmpeg");
-                ytdl.OutputFolder = folderPath;
-
+                var ytdl = GetYTDLInstance(folderPath, dependencyPath);
                 var progress = new Progress<DownloadProgress>(p =>
                 {
                     this.progress = p.Progress;
@@ -52,7 +39,7 @@ namespace moos.Services
             return (isSuccess, downloadResult);
         }
 
-        public void cancelCurrentDownload()
+        public void CancelCurrentDownload()
         {
             if(cts is not null){
                 cts.Cancel();
@@ -75,7 +62,7 @@ namespace moos.Services
             return (res.Success, downloadedTrack);
         }
 
-        public float GetProgressPercentage()
+        public float GetDownloadProgressPercentage()
         {
             return progress * 100;
         }
@@ -84,6 +71,27 @@ namespace moos.Services
         {
             if (string.IsNullOrWhiteSpace(url)) return false;
             return YouTubeUrlRegex.IsMatch(url);
+        }
+
+        public Task<List<Track>> GetSearchResults(string searchString, string folderPath, string dependencyPath)
+        {
+            List<Track> searchResults = [];
+
+            var ytdl = GetYTDLInstance(folderPath, dependencyPath);
+            string search
+
+            return searchResults;
+        }
+
+        private YoutubeDL GetYTDLInstance(string folderPath, string dependencyPath)
+        {
+            ytdl = new YoutubeDL();
+
+            ytdl.YoutubeDLPath = Path.Combine(dependencyPath, "yt-dlp");
+            ytdl.FFmpegPath = Path.Combine(dependencyPath, "ffmpeg");
+            ytdl.OutputFolder = folderPath;
+
+            return ytdl;
         }
     }
 }
