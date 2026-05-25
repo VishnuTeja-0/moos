@@ -12,5 +12,6 @@ public interface IYtDownloader
     Task<(bool, Track?)> FetchVideoMetadata(string url, Track downloadedTrack);
     void CancelCurrentDownload();
     float GetDownloadProgressPercentage();
-    Task<List<Track>> GetSearchResults(string searchString, string dependencyPath);
-}
+    Task<(bool,List<Track>)> GetSearchResults(string searchString, string folderPath, string dependencyPath);
+}   
+

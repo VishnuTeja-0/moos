@@ -3,6 +3,7 @@ using moos.Interfaces.Services;
 using moos.Models;
 using YoutubeDLSharp;
 using YoutubeDLSharp.Metadata;
+using YoutubeDLSharp.Options;
 
 namespace moos.Services
 {
@@ -73,14 +74,22 @@ namespace moos.Services
             return YouTubeUrlRegex.IsMatch(url);
         }
 
-        public Task<List<Track>> GetSearchResults(string searchString, string folderPath, string dependencyPath)
+        public async Task<(bool,List<Track>)> GetSearchResults(string searchString, string folderPath, string dependencyPath)
         {
             List<Track> searchResults = [];
-
+            
             var ytdl = GetYTDLInstance(folderPath, dependencyPath);
-            string search
+            var options = new OptionSet()
+            {
+                DefaultSearch = "ytsearch:" + searchString
+            };
+            cts = new CancellationTokenSource();
+            var res = await ytdl.RunWithOptions("", options, cts.Token);
 
-            return searchResults;
+            var isSuccess = res.Success;
+            
+            
+            return (false, searchResults);
         }
 
         private YoutubeDL GetYTDLInstance(string folderPath, string dependencyPath)
