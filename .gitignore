@@ -398,8 +398,10 @@ FodyWeavers.xsd
 *.sln.iml
 
 .moos/idea/*
+.moos/.idea/*
 .moos/vscode/*
 
+.idea
 ffmpeg
 yt-dlp
 ffmpeg.exe

@@ -36,6 +36,10 @@ namespace moos.Services
                 isSuccess = res.Success;
                 downloadResult = res.Success ? res.Data : string.Join(",", res.ErrorOutput);
             }
+            else
+            {
+                GetSearchResults(url, folderPath, dependencyPath);
+            }
 
             return (isSuccess, downloadResult);
         }
@@ -81,10 +85,11 @@ namespace moos.Services
             var ytdl = GetYTDLInstance(folderPath, dependencyPath);
             var options = new OptionSet()
             {
-                DefaultSearch = "ytsearch:" + searchString
+                DefaultSearch = "fixup_error",
+                PlaylistItems = "10"
             };
             cts = new CancellationTokenSource();
-            var res = await ytdl.RunWithOptions("", options, cts.Token);
+            var res = await ytdl.RunWithOptions("https://www.youtube.com/results?search_query=" + Uri.EscapeDataString(searchString), options, cts.Token);
 
             var isSuccess = res.Success;
             
