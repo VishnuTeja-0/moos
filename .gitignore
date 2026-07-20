@@ -409,3 +409,5 @@ yt-dlp.exe
 runtimes
 moos/Services/OpenALPlayerService.cs
 moos/Services/SoundFlowPlayerService.cs
+deno
+deno.exe

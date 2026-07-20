@@ -38,7 +38,7 @@ namespace moos.Services
             }
             else
             {
-                GetSearchResults(url, folderPath, dependencyPath);
+                await GetSearchResults(url, folderPath, dependencyPath);
             }
 
             return (isSuccess, downloadResult);
@@ -86,7 +86,9 @@ namespace moos.Services
             var options = new OptionSet()
             {
                 DefaultSearch = "fixup_error",
-                PlaylistItems = "10"
+                PlaylistItems = "1",
+                FfmpegLocation = dependencyPath,
+                JsRuntimes = dependencyPath
             };
             cts = new CancellationTokenSource();
             var res = await ytdl.RunWithOptions("https://www.youtube.com/results?search_query=" + Uri.EscapeDataString(searchString), options, cts.Token);

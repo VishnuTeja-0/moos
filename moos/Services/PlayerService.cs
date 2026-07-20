@@ -19,7 +19,7 @@ namespace moos.Services
         {
             try
             {
-                outputDevice = new WaveOutEvent()
+                outputDevice = new Alsa
                 {
                     DesiredLatency = 200,
                     NumberOfBuffers = 3

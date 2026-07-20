@@ -8,12 +8,14 @@ public class DependencyService
     private readonly string _projectDirectory = Directory.GetParent(Environment.CurrentDirectory).Parent.Parent.FullName;
     private string _ytdlpFile;
     private string _ffmpegFile;
+    private string _denoFile;
 
     public async Task LoadAppDependencies()
     {
         SetDependencyNames();
         string ytDlpPath = Path.Combine(_projectDirectory, _ytdlpFile);
         string ffmpegPath = Path.Combine(_projectDirectory, _ffmpegFile);
+        string denoPath = Path.Combine(_projectDirectory, _denoFile);
 
         if(!File.Exists(ytDlpPath))
         {
@@ -24,9 +26,15 @@ public class DependencyService
             await YoutubeDLSharp.Utils.DownloadFFmpeg(_projectDirectory);
         }
 
+        if (!File.Exists(denoPath))
+        {
+            await YoutubeDLSharp.Utils.DownloadDeno(_projectDirectory);
+        }
+
         if(OperatingSystem.IsLinux()){
             SetExecutablePermission(ytDlpPath);
             SetExecutablePermission(ffmpegPath);
+            SetExecutablePermission(denoPath);
         }
         
     }
@@ -37,11 +45,13 @@ public class DependencyService
         {
             _ytdlpFile = "yt-dlp.exe";
             _ffmpegFile = "ffmpeg.exe";
+            _denoFile = "deno.exe";
         }
         else if(OperatingSystem.IsLinux())
         {
             _ytdlpFile = "yt-dlp";
             _ffmpegFile = "ffmpeg";
+            _denoFile = "deno";
         }
     }
 
