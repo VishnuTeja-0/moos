@@ -1,5 +1,4 @@
-﻿using System;
-using NAudio.Wave;
+﻿using NAudio.Wave;
 
 namespace VarispeedDemo.SoundTouch
 {
@@ -31,13 +30,14 @@ namespace VarispeedDemo.SoundTouch
             soundTouchReadBuffer = new float[sourceReadBuffer.Length * 10]; // support down to 0.1 speed
         }
 
-        public int Read(float[] buffer, int offset, int count)
+        public int Read(Span<float> buffer)
         {
+            var count = buffer.Length;
             if (playbackRate == 0) // play silence
             {
-                for (int n = 0; n < count; n++)
+                for (var n = 0; n < count; n++)
                 {
-                    buffer[offset++] = 0;
+                    buffer[n] = 0;
                 }
                 return count;
             }
@@ -48,13 +48,13 @@ namespace VarispeedDemo.SoundTouch
                 repositionRequested = false;
             }
 
-            int samplesRead = 0;
-            bool reachedEndOfSource = false;
+            var samplesRead = 0;
+            var reachedEndOfSource = false;
             while (samplesRead < count)
             {
                 if (soundTouch.NumberOfSamplesAvailable == 0)
                 {
-                    var readFromSource = sourceProvider.Read(sourceReadBuffer, 0, sourceReadBuffer.Length);
+                    var readFromSource = sourceProvider.Read(new Span<float>(sourceReadBuffer));
                     if (readFromSource > 0)
                     {
                         soundTouch.PutSamples(sourceReadBuffer, readFromSource/channelCount);
@@ -70,9 +70,9 @@ namespace VarispeedDemo.SoundTouch
 
                 var received = soundTouch.ReceiveSamples(soundTouchReadBuffer, desiredSampleFrames)*channelCount;
                 // use loop instead of Array.Copy due to WaveBuffer
-                for (int n = 0; n < received; n++)
+                for (var n = 0; n < received; n++)
                 {
-                    buffer[offset+samplesRead++] = soundTouchReadBuffer[n];
+                    buffer[samplesRead++] = soundTouchReadBuffer[n];
                 }
                 if (received == 0 && reachedEndOfSource) break;
             }
@@ -83,32 +83,25 @@ namespace VarispeedDemo.SoundTouch
 
         public float PlaybackRate
         {
-            get
-            {
-                return playbackRate;
-            }
+            get => playbackRate;
             set
             {
-                if (playbackRate != value)
-                {
-                    UpdatePlaybackRate(value);
-                    playbackRate = value;
-                }
+                if (playbackRate == value) return;
+                UpdatePlaybackRate(value);
+                playbackRate = value;
             }
         }
 
         private void UpdatePlaybackRate(float value)
         {
-            if (value != 0)
+            if (value == 0) return;
+            if (currentSoundTouchProfile.UseTempo)
             {
-                if (currentSoundTouchProfile.UseTempo)
-                {
-                    soundTouch.SetTempo(value);
-                }
-                else
-                {
-                    soundTouch.SetRate(value);
-                }
+                soundTouch.SetTempo(value);
+            }
+            else
+            {
+                soundTouch.SetRate(value);
             }
         }
 
@@ -117,7 +110,7 @@ namespace VarispeedDemo.SoundTouch
             soundTouch.Dispose();
         }
 
-        public void SetSoundTouchProfile(SoundTouchProfile soundTouchProfile)
+        private void SetSoundTouchProfile(SoundTouchProfile soundTouchProfile)
         {
             if (currentSoundTouchProfile != null && 
                 playbackRate != 1.0f && 

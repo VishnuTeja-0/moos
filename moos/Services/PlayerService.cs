@@ -1,16 +1,18 @@
-﻿using NAudio.Wave;
-using System;
+﻿using System.Runtime.InteropServices;
+using moos.Interfaces.Services;
+using NAudio.Wave;
+using NAudio.Wave.Alsa;
 using NAudio.Wave.SampleProviders;
 using VarispeedDemo.SoundTouch;
-using moos.Interfaces.Services;
+using NAudio.SoundFile;
 
 
 namespace moos.Services
 {
     public class PlayerService : IAudioPlayer
     {
-        private WaveOutEvent? outputDevice;
-        private AudioFileReader? audioFile;
+        private IWavePlayer? outputDevice;
+        private SoundFileReader? audioFile;
         private SmbPitchShiftingSampleProvider? pitch;
         private VarispeedSampleProvider? speed;
 
@@ -19,12 +21,22 @@ namespace moos.Services
         {
             try
             {
-                outputDevice = new Alsa
+                if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    DesiredLatency = 200,
-                    NumberOfBuffers = 3
-                };
-                audioFile = new AudioFileReader(filePath);
+                    
+                }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    outputDevice = new WasapiPlayerBuilder()
+                        .WithLowLatency()
+                        .Build();
+                }
+                else
+                {
+                    throw new PlatformNotSupportedException();
+                }
+                
+                audioFile = new SoundFileReader(filePath);
 
                 speed = new VarispeedSampleProvider(
                         audioFile.ToSampleProvider(),
